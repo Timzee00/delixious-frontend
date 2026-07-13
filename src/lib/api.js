@@ -1,18 +1,13 @@
 import axios from 'axios';
-import { getCsrfToken } from './csrf.js';
+import { getCsrfToken, setCsrfToken } from './csrf.js';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  // Auth now lives in httpOnly cookies, not a token we attach ourselves -
-  // this tells the browser to send/accept them on cross-origin requests.
   withCredentials: true,
 });
 
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
-// Echo the (non-httpOnly) csrf_token cookie back as a header on every
-// state-changing request. Re-read fresh each time (not cached) since the
-// backend rotates this token on every login/signup/refresh.
 api.interceptors.request.use((config) => {
   if (MUTATING_METHODS.has((config.method || '').toLowerCase())) {
     const token = getCsrfToken();
@@ -21,18 +16,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// AuthContext registers a callback here so this module - which AuthContext
-// itself depends on - can tell it "the session is really gone" without a
-// circular import back into AuthContext.
 let unauthorizedHandler = null;
 export function setUnauthorizedHandler(fn) {
   unauthorizedHandler = fn;
 }
 
-// Multiple requests can 401 with an expired token at the same moment
-// (e.g. a page that fires several API calls on load). Without this, each
-// one would kick off its own /auth/refresh call, racing to rotate the same
-// refresh token. This makes every concurrent 401 share one in-flight refresh.
 let refreshPromise = null;
 
 api.interceptors.response.use(
@@ -51,7 +39,10 @@ api.interceptors.response.use(
 
     try {
       if (!refreshPromise) {
-        refreshPromise = api.post('/auth/refresh').finally(() => {
+        refreshPromise = api.post('/auth/refresh').then((res) => {
+          setCsrfToken(res.data.csrfToken);
+          return res;
+        }).finally(() => {
           refreshPromise = null;
         });
       }
