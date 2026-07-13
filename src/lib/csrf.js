@@ -4,7 +4,12 @@
  * mutating requests (see lib/api.js). See the backend's middleware/csrf.js
  * for the full double-submit-cookie explanation.
  */
+let currentToken = null;
+
+export function setCsrfToken(token) {
+  currentToken = token;
+}
+
 export function getCsrfToken() {
-  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  return currentToken;
 }
