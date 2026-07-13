@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api, { setUnauthorizedHandler } from '../lib/api.js';
+import { setCsrfToken } from '../lib/csrf.js';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id, email } - never the raw tokens, those stay in httpOnly cookies
+  const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,6 +14,7 @@ export function AuthProvider({ children }) {
       const { data } = await api.get('/auth/me');
       setUser(data.user);
       setProfile(data.profile);
+      setCsrfToken(data.csrfToken);
       return data.profile;
     } catch {
       setUser(null);
@@ -22,10 +24,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    // Wired to api.js's response interceptor: if a token refresh ultimately
-    // fails (refresh token itself expired/revoked), this clears local state
-    // so the UI reflects "logged out" immediately rather than on the next
-    // manual action.
     setUnauthorizedHandler(() => {
       setUser(null);
       setProfile(null);
@@ -41,14 +39,13 @@ export function AuthProvider({ children }) {
     const { data } = await api.post('/auth/login', { email, password });
     setUser(data.user);
     setProfile(data.profile);
+    setCsrfToken(data.csrfToken);
     return data;
   }
 
   async function signup(payload) {
     const { data } = await api.post('/auth/signup', payload);
     if (data.user) {
-      // Cookies were set immediately (no email confirmation required) -
-      // fetch the profile the same way login does.
       await refreshProfile();
     }
     return data;
@@ -88,4 +85,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider.');
   return ctx;
-}
+    }
