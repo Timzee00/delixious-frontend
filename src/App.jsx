@@ -1,12 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import PageLoader from './components/PageLoader.jsx';
 
-// Every page is its own chunk, fetched only when the person navigates there -
-// keeps the initial bundle to auth + home + shell instead of the whole app.
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Signup = lazy(() => import('./pages/Signup.jsx'));
@@ -19,12 +18,16 @@ const OrderTrackingPage = lazy(() => import('./pages/OrderTrackingPage.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const About = lazy(() => import('./pages/About.jsx'));
+const FAQ = lazy(() => import('./pages/FAQ.jsx'));
+const Contact = lazy(() => import('./pages/Contact.jsx'));
+const LegalPage = lazy(() => import('./pages/LegalPage.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-sand">
-      <a
+    <div className="flex min-h-screen flex-col bg-sand">
+      
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-pepper focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
       >
@@ -33,7 +36,7 @@ export default function App() {
 
       <Navbar />
 
-      <main id="main-content">
+      <main id="main-content" className="flex-1">
         <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -41,6 +44,10 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/legal/:slug" element={<LegalPage />} />
 
               <Route
                 path="/cart"
@@ -112,6 +119,8 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
       </main>
+
+      <Footer />
     </div>
   );
-}
+      }
