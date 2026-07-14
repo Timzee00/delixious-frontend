@@ -23,7 +23,7 @@ const FAQ = lazy(() => import('./pages/FAQ.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
 const LegalPage = lazy(() => import('./pages/LegalPage.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
-
+const Admin = lazy(() => import('./pages/Admin.jsx'));
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-sand">
@@ -96,6 +96,14 @@ export default function App() {
                     <Notifications />
                   </ProtectedRoute>
                 }
+                <Route
+  path="/hq"
+  element={
+    <ProtectedRoute roles={['admin']}>
+      <Admin />
+    </ProtectedRoute>
+  }
+/>
               />
               <Route
                 path="/profile"
