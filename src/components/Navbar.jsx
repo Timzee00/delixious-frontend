@@ -46,6 +46,11 @@ export default function Navbar() {
               Dashboard
             </NavLink>
           )}
+          {profile?.role === 'admin' && (
+  <NavLink to="/hq" className={linkClass}>
+    Admin
+  </NavLink>
+)}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -130,6 +135,11 @@ export default function Navbar() {
                 Dashboard
               </NavLink>
             )}
+            {profile?.role === 'admin' && (
+  <NavLink to="/hq" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
+    Admin
+  </NavLink>
+)}
             {isAuthenticated && (
               <NavLink to="/profile" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
                 Profile
