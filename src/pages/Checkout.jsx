@@ -29,16 +29,41 @@ export default function Checkout() {
     );
   }
 
+  async function reverseGeocode(lat, lng) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error('Reverse geocoding failed');
+    const data = await res.json();
+    return data.display_name || null;
+  }
+
   function useMyLocation() {
     if (!navigator.geolocation) {
       setError('Location services are not available in this browser.');
       return;
     }
     setLocating(true);
+    setError('');
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setCoords({ lat, lng });
+
+        try {
+          const readableAddress = await reverseGeocode(lat, lng);
+          if (readableAddress) {
+            setAddress(readableAddress);
+          } else {
+            setError('Got your location, but could not turn it into an address. Please type it in below.');
+          }
+        } catch {
+          setError('Got your location, but could not look up the address. Please type it in below.');
+        } finally {
+          setLocating(false);
+        }
       },
       () => {
         setError('Could not get your location. You can still type your address.');
@@ -123,4 +148,4 @@ export default function Checkout() {
       </form>
     </div>
   );
-}
+          }
