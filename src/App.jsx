@@ -24,11 +24,12 @@ const Contact = lazy(() => import('./pages/Contact.jsx'));
 const LegalPage = lazy(() => import('./pages/LegalPage.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
+const RiderDashboard = lazy(() => import('./pages/RiderDashboard.jsx'));
 
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-sand">
-      
+      <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-pepper focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
       >
@@ -107,6 +108,14 @@ export default function App() {
                 }
               />
               <Route
+                path="/rider"
+                element={
+                  <ProtectedRoute roles={['delivery_agent', 'admin']}>
+                    <RiderDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/profile"
                 element={
                   <ProtectedRoute>
@@ -132,4 +141,4 @@ export default function App() {
       <Footer />
     </div>
   );
-                }
+}
