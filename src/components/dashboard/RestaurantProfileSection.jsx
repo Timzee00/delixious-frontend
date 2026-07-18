@@ -71,8 +71,10 @@ export default function RestaurantProfileSection({ restaurant, onCreated, onUpda
           <button
             onClick={handleToggleOpen}
             disabled={togglingOpen}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${
-              restaurant.is_open ? 'bg-ink-soft hover:bg-ink' : 'bg-jade hover:bg-jade/90'
+            className={`rounded-lg border-2 bg-transparent px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60 ${
+              restaurant.is_open
+                ? 'border-ink-soft text-ink-soft hover:bg-ink-soft/10'
+                : 'border-jade text-jade hover:bg-jade/10'
             }`}
           >
             {togglingOpen ? 'Updating...' : restaurant.is_open ? 'Close restaurant' : 'Open restaurant'}
