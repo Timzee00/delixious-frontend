@@ -36,4 +36,4 @@ export default function StatsSection() {
       <StatCard label="Platform Commission" value={`₦${Number(stats.total_commission).toLocaleString()}`} />
     </div>
   );
-      }
+}
