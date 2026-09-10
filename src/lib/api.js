@@ -23,36 +23,57 @@ export function setUnauthorizedHandler(fn) {
 
 let refreshPromise = null;
 
+async function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = api.post('/auth/refresh')
+      .then((res) => {
+        setCsrfToken(res.data.csrfToken);
+        return res;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { config, response } = error;
-
+    const isAuthRefreshRequest = config?.url?.endsWith('/auth/refresh');
+    const isAuthBootstrapRequest = config?.url?.endsWith('/auth/me');
     const isExpiredToken = response?.status === 401 && response?.data?.code === 'TOKEN_EXPIRED';
+    const isNoSession = response?.status === 401 && response?.data?.code === 'NO_SESSION';
 
-    if (!isExpiredToken || config._retried) {
-      if (response?.status === 401) unauthorizedHandler?.();
+    // The refresh request itself must never recursively trigger another refresh.
+    if (isAuthRefreshRequest) {
       return Promise.reject(error);
     }
 
-    config._retried = true;
-
-    try {
-      if (!refreshPromise) {
-        refreshPromise = api.post('/auth/refresh').then((res) => {
-          setCsrfToken(res.data.csrfToken);
-          return res;
-        }).finally(() => {
-          refreshPromise = null;
-        });
+    // Expired access tokens can be recovered using the httpOnly refresh cookie.
+    if (isExpiredToken && !config._retried) {
+      config._retried = true;
+      try {
+        await refreshSession();
+        return api(config);
+      } catch (refreshError) {
+        unauthorizedHandler?.();
+        return Promise.reject(refreshError);
       }
-      await refreshPromise;
-      return api(config);
-    } catch {
-      unauthorizedHandler?.();
+    }
+
+    // A missing access cookie during initial app bootstrap can still have a
+    // valid refresh cookie. Let AuthContext explicitly attempt refresh once.
+    // Do not immediately erase auth state here for /auth/me.
+    if (isNoSession && isAuthBootstrapRequest) {
       return Promise.reject(error);
     }
+
+    if (response?.status === 401) unauthorizedHandler?.();
+    return Promise.reject(error);
   }
 );
 
+export { refreshSession };
 export default api;
