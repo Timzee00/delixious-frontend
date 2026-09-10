@@ -2,210 +2,160 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
+import FoodCard from '../components/FoodCard.jsx';
 import RestaurantCard from '../components/RestaurantCard.jsx';
+import ConfirmModal from '../components/ConfirmModal.jsx';
 import { GridSkeleton, EmptyState, ErrorState } from '../components/StateViews.jsx';
-import Img from '../components/Img.jsx';
-import { formatNaira } from '../lib/format.js';
 
 const CUISINES = ['All', 'Nigerian', 'Continental', 'Chinese', 'Fast Food', 'Grills', 'Seafood', 'Pastries'];
 
 export default function Home() {
   const { isAuthenticated, profile } = useAuth();
-
+  const { refreshCart } = useCart();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [cuisine, setCuisine] = useState('All');
-  const [openOnly, setOpenOnly] = useState(false);
-
+  const [foods, setFoods] = useState([]);
+  const [favoriteFoods, setFavoriteFoods] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
-  const [searchResults, setSearchResults] = useState(null);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [favoriteBusy, setFavoriteBusy] = useState(new Set());
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [error, setError] = useState('');
+  const [addBusy, setAddBusy] = useState(null);
+  const [cartConflict, setCartConflict] = useState(null);
 
-  // Debounce the search box so we're not hitting the API on every keystroke
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Reset to page 1 whenever the search/filters change
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQuery, cuisine, openOnly]);
-
   useEffect(() => {
     let cancelled = false;
-    const isFirstPage = page === 1;
-
     async function load() {
-      if (isFirstPage) setLoading(true);
-      else setLoadingMore(true);
+      setLoading(true);
       setError('');
       try {
-        if (debouncedQuery.length >= 2) {
-          const { data } = await api.get('/search', { params: { q: debouncedQuery } });
-          if (!cancelled) setSearchResults(data);
+        const [foodRes, restaurantRes, favoriteRes] = await Promise.all([
+          api.get('/menu-items/feed', { params: { page: 1, limit: 12, ...(debouncedQuery ? { q: debouncedQuery } : {}), ...(cuisine !== 'All' ? { cuisine } : {}) } }),
+          api.get('/restaurants', { params: { page: 1, limit: 8 } }),
+          isAuthenticated ? api.get('/favorites/restaurants') : Promise.resolve({ data: { restaurant_ids: [] } }),
+        ]);
+        if (cancelled) return;
+        setFoods(foodRes.data.menu_items || []);
+        setRestaurants(restaurantRes.data.restaurants || []);
+        const ids = favoriteRes.data.restaurant_ids || [];
+        setFavoriteIds(new Set(ids));
+
+        if (isAuthenticated && ids.length) {
+          const personalized = await api.get('/menu-items/feed', { params: { page: 1, limit: 8, restaurant_ids: ids.join(',') } });
+          if (!cancelled) setFavoriteFoods(personalized.data.menu_items || []);
         } else {
-          setSearchResults(null);
-          const params = { page, limit: 12 };
-          if (cuisine !== 'All') params.cuisine = cuisine;
-          if (openOnly) params.is_open = true;
-          const { data } = await api.get('/restaurants', { params });
-          if (!cancelled) {
-            setRestaurants((prev) => (isFirstPage ? data.restaurants : [...prev, ...data.restaurants]));
-            setTotal(data.total);
-          }
+          setFavoriteFoods([]);
         }
       } catch (err) {
-        if (!cancelled) setError(err.response?.data?.error || 'Could not load restaurants right now.');
+        if (!cancelled) setError(err.response?.data?.error || 'Could not load Delixious right now.');
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-          setLoadingMore(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
-
     load();
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedQuery, cuisine, openOnly, page]);
+    return () => { cancelled = true; };
+  }, [debouncedQuery, cuisine, isAuthenticated]);
 
-  const hasMore = !searchResults && restaurants.length < total;
-
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <div className="ticket p-8 sm:p-10">
-        <p className="font-mono text-xs uppercase tracking-widest text-pepper">Lagos - Abuja - Port Harcourt</p>
-        <h1 className="mt-3 font-display text-3xl font-bold leading-tight text-ink sm:text-4xl">
-          Order food from your favorite local spots
-        </h1>
-        <p className="mt-2 text-ink-soft">
-          {isAuthenticated
-            ? `Welcome back${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.`
-            : 'Log in to start ordering.'}
-        </p>
-
-        <div className="mt-6">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search restaurants or dishes..."
-            aria-label="Search restaurants or dishes"
-            className="w-full rounded-lg border border-hairline bg-paper px-4 py-3 text-ink placeholder:text-ink-soft/60 focus:border-pepper"
-          />
-        </div>
-      </div>
-
-      {!searchResults && (
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          {CUISINES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCuisine(c)}
-              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                cuisine === c
-                  ? 'border-pepper bg-pepper/10 text-pepper'
-                  : 'border-hairline text-ink-soft hover:border-ink-soft'
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-          <label className="ml-2 flex items-center gap-2 text-sm text-ink-soft">
-            <input
-              type="checkbox"
-              checked={openOnly}
-              onChange={(e) => setOpenOnly(e.target.checked)}
-              className="accent-pepper"
-            />
-            Open now
-          </label>
-        </div>
-      )}
-
-      <div className="mt-8">
-        {loading ? (
-          <GridSkeleton />
-        ) : error ? (
-          <ErrorState message={error} />
-        ) : searchResults ? (
-          <SearchResultsView results={searchResults} />
-        ) : restaurants.length ? (
-          <>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {restaurants.map((r) => (
-                <RestaurantCard key={r.id} restaurant={r} />
-              ))}
-            </div>
-            {hasMore && (
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={loadingMore}
-                className="mt-6 w-full rounded-lg border border-hairline py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-pepper hover:text-pepper disabled:opacity-60"
-              >
-                {loadingMore ? 'Loading...' : 'Load more restaurants'}
-              </button>
-            )}
-          </>
-        ) : (
-          <EmptyState message="No restaurants match those filters yet. Try clearing them." />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SearchResultsView({ results }) {
-  const { restaurants, menu_items, query } = results;
-
-  if (!restaurants.length && !menu_items.length) {
-    return <EmptyState message={`No matches for "${query}". Try a different search.`} />;
+  async function toggleFavorite(id) {
+    if (!isAuthenticated) return;
+    setFavoriteBusy((current) => new Set(current).add(id));
+    try {
+      if (favoriteIds.has(id)) {
+        await api.delete(`/favorites/restaurants/${id}`);
+        setFavoriteIds((current) => { const next = new Set(current); next.delete(id); return next; });
+      } else {
+        await api.post(`/favorites/restaurants/${id}`);
+        setFavoriteIds((current) => new Set(current).add(id));
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not update your favorites.');
+    } finally {
+      setFavoriteBusy((current) => { const next = new Set(current); next.delete(id); return next; });
+    }
   }
 
+  async function addToCart(item, replace = false) {
+    if (!isAuthenticated) {
+      setError('Log in to add food to your cart.');
+      return;
+    }
+    setAddBusy(item.id);
+    try {
+      await api.post('/cart/items', { menu_item_id: item.id, quantity: 1, replace });
+      await refreshCart();
+      setCartConflict(null);
+    } catch (err) {
+      if (err.response?.status === 409) setCartConflict({ item, message: err.response.data.error });
+      else setError(err.response?.data?.error || 'Could not add that dish to your cart.');
+    } finally {
+      setAddBusy(null);
+    }
+  }
+
+  const restaurantRail = restaurants.map((restaurant) => (
+    <div key={restaurant.id} className="w-[280px] shrink-0 sm:w-[320px]">
+      <RestaurantCard
+        restaurant={restaurant}
+        isFavorite={favoriteIds.has(restaurant.id)}
+        favoriteBusy={favoriteBusy.has(restaurant.id)}
+        onToggleFavorite={isAuthenticated ? () => toggleFavorite(restaurant.id) : undefined}
+      />
+    </div>
+  ));
+
   return (
-    <div className="space-y-10">
-      {restaurants.length > 0 && (
-        <section>
-          <h2 className="font-display text-lg font-bold text-ink">Restaurants</h2>
-          <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {restaurants.map((r) => (
-              <RestaurantCard key={r.id} restaurant={r} />
-            ))}
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="ticket overflow-hidden p-6 sm:p-10">
+        <p className="font-mono text-xs uppercase tracking-widest text-pepper">Lagos · Abuja · Port Harcourt</p>
+        <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <h1 className="font-display text-3xl font-bold leading-tight text-ink sm:text-5xl">What are you eating today?</h1>
+            <p className="mt-3 max-w-2xl text-ink-soft">Browse dishes first. Save the restaurants you love and Delixious will keep their food closer to the top of your feed.</p>
           </div>
+          <Link to="/restaurants" className="rounded-lg border border-hairline px-4 py-2.5 text-sm font-semibold text-ink hover:border-pepper hover:text-pepper">Browse all restaurants</Link>
+        </div>
+        <div className="mt-7">
+          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search for a dish..." aria-label="Search for a dish" className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-ink placeholder:text-ink-soft/60" />
+        </div>
+      </section>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        {CUISINES.map((item) => <button key={item} type="button" onClick={() => setCuisine(item)} className={`rounded-full border px-3 py-1.5 text-sm font-medium ${cuisine === item ? 'border-pepper bg-pepper/10 text-pepper' : 'border-hairline text-ink-soft hover:border-ink-soft'}`}>{item}</button>)}
+      </div>
+
+      {isAuthenticated && favoriteFoods.length > 0 && !debouncedQuery && (
+        <section className="mt-10">
+          <div className="flex items-end justify-between gap-4">
+            <div><p className="font-mono text-xs uppercase tracking-widest text-pepper">Personalized for you</p><h2 className="mt-1 font-display text-2xl font-bold text-ink">From your favorite restaurants</h2></div>
+            <Link to="/favorites" className="text-sm font-semibold text-pepper hover:underline">Manage favorites</Link>
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">{favoriteFoods.map((item) => <FoodCard key={item.id} item={item} onAdd={addToCart} adding={addBusy === item.id} />)}</div>
         </section>
       )}
 
-      {menu_items.length > 0 && (
-        <section>
-          <h2 className="font-display text-lg font-bold text-ink">Dishes</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {menu_items.map((item) => (
-              <Link
-                key={item.id}
-                to={`/restaurants/${item.restaurants?.id || item.restaurant_id}`}
-                className="ticket flex items-center gap-4 p-4 transition-shadow hover:shadow-md"
-              >
-                <Img
-                  src={item.image_url}
-                  fallbackText={item.name?.[0]}
-                  frameClassName="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-hairline"
-                />
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate font-display text-sm font-bold text-ink">{item.name}</h4>
-                  <p className="truncate text-xs text-ink-soft">{item.restaurants?.name}</p>
-                  <p className="mt-1 font-mono text-sm font-semibold text-pepper">{formatNaira(item.price)}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="mt-10">
+        <div className="flex items-end justify-between gap-4">
+          <div><p className="font-mono text-xs uppercase tracking-widest text-pepper">Fresh from the marketplace</p><h2 className="mt-1 font-display text-2xl font-bold text-ink">Discover dishes</h2>{debouncedQuery && <p className="mt-1 text-sm text-ink-soft">Showing results for “{debouncedQuery}”.</p>}</div>
+        </div>
+        {loading ? <div className="mt-5"><GridSkeleton /></div> : error ? <div className="mt-5"><ErrorState message={error} /></div> : foods.length ? <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">{foods.map((item) => <FoodCard key={item.id} item={item} onAdd={addToCart} adding={addBusy === item.id} />)}</div> : <div className="mt-5"><EmptyState message="No dishes match that search yet." /></div>}
+      </section>
+
+      <section className="mt-12">
+        <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-xs uppercase tracking-widest text-pepper">Explore by restaurant</p><h2 className="mt-1 font-display text-2xl font-bold text-ink">Restaurants</h2></div><Link to="/restaurants" className="text-sm font-semibold text-pepper hover:underline">See more</Link></div>
+        {loading ? <div className="mt-5"><GridSkeleton /></div> : restaurants.length ? <div className="no-scrollbar mt-5 flex snap-x gap-5 overflow-x-auto pb-3">{restaurantRail}</div> : <div className="mt-5"><EmptyState message="No approved restaurants are available yet." /></div>}
+      </section>
+
+      {!isAuthenticated && <div className="mt-10 rounded-xl border border-hairline bg-paper p-5 text-sm text-ink-soft">Create an account to save favorite restaurants, keep a personalized dish feed, and place orders.</div>}
+
+      {cartConflict && <ConfirmModal title="Switch restaurants?" message={cartConflict.message} confirmLabel="Replace cart" onCancel={() => setCartConflict(null)} onConfirm={() => addToCart(cartConflict.item, true)} />}
     </div>
   );
 }
