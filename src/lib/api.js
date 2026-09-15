@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { getCsrfToken, setCsrfToken } from './csrf.js';
 
+// Production uses the same-origin Express API. VITE_API_URL remains available
+// for local development or a separately hosted API.
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
 });
 
