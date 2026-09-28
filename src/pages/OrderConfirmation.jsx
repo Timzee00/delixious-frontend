@@ -7,6 +7,7 @@ import { formatNaira } from '../lib/format.js';
 export default function OrderConfirmation() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
+  const checkoutGroupId = searchParams.get('checkout_group_id');
   const reference = searchParams.get('reference') || searchParams.get('trxref');
   const { refreshCart } = useCart();
 
@@ -23,16 +24,23 @@ export default function OrderConfirmation() {
       setError('');
       try {
         if (reference) {
-          const { data } = await api.get(`/payments/verify/${reference}`);
+          const { data } = await api.get(`/payments/verify/${encodeURIComponent(reference)}`);
           if (!cancelled) setPaymentStatus(data.status);
         }
+
         if (orderId) {
           const { data } = await api.get(`/orders/${orderId}`);
           if (!cancelled) setOrder(data.order);
+        } else if (checkoutGroupId) {
+          const { data } = await api.get(`/orders/group/${checkoutGroupId}`);
+          if (!cancelled && data.orders?.length) setOrder(data.orders[0]);
         }
-        refreshCart(); // cart was already cleared server-side at checkout time
+
+        await refreshCart();
       } catch (err) {
-        if (!cancelled) setError(err.response?.data?.error || 'Could not confirm your payment right now.');
+        if (!cancelled) {
+          setError(err.response?.data?.error || 'Could not confirm your payment right now.');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -42,8 +50,7 @@ export default function OrderConfirmation() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId, reference]);
+  }, [checkoutGroupId, orderId, reference, refreshCart]);
 
   if (loading) {
     return (
@@ -64,6 +71,9 @@ export default function OrderConfirmation() {
             <p className="font-mono text-xs uppercase tracking-widest text-danger">Something went wrong</p>
             <h1 className="mt-2 font-display text-xl font-bold text-ink">Could not confirm payment</h1>
             <p className="mt-2 text-sm text-ink-soft">{error}</p>
+            <Link to="/orders" className="mt-5 inline-block text-sm font-semibold text-pepper hover:underline">
+              View my orders
+            </Link>
           </>
         ) : isSuccess ? (
           <>
@@ -85,28 +95,32 @@ export default function OrderConfirmation() {
           <>
             <p className="font-mono text-xs uppercase tracking-widest text-gold">Pending</p>
             <h1 className="mt-2 font-display text-xl font-bold text-ink">Payment still processing</h1>
-            <p className="mt-2 text-sm text-ink-soft">This can take a moment. Refresh to check again.</p>
+            <p className="mt-2 text-sm text-ink-soft">
+              Your payment provider may still be confirming the transaction. You can check your order history shortly.
+            </p>
           </>
         )}
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          {order && isSuccess && (
+          {order && (
             <Link
               to={`/orders/${order.id}`}
               className="rounded-lg bg-pepper px-5 py-2.5 font-semibold text-white transition-colors hover:bg-pepper-dark"
             >
-              Track my order
+              {isSuccess ? 'Track my order' : 'View order'}
             </Link>
           )}
           <Link
-            to="/"
-            className={`rounded-lg px-5 py-2.5 font-semibold transition-colors ${
-              order && isSuccess
-                ? 'border border-hairline text-ink-soft hover:border-ink-soft'
-                : 'bg-pepper text-white hover:bg-pepper-dark'
-            }`}
+            to="/orders"
+            className="rounded-lg border border-hairline px-5 py-2.5 font-semibold text-ink-soft transition-colors hover:border-ink-soft"
           >
-            Back to Home
+            Order history
+          </Link>
+          <Link
+            to="/"
+            className="rounded-lg border border-hairline px-5 py-2.5 font-semibold text-ink-soft transition-colors hover:border-ink-soft"
+          >
+            Home
           </Link>
         </div>
       </div>
