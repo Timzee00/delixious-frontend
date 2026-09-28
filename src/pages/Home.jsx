@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext.jsx';
 import FoodCard from '../components/FoodCard.jsx';
 import RestaurantCard from '../components/RestaurantCard.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
+import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import { GridSkeleton, EmptyState, ErrorState } from '../components/StateViews.jsx';
 
 const CUISINES = ['All', 'Nigerian', 'Continental', 'Chinese', 'Fast Food', 'Grills', 'Seafood', 'Pastries'];
@@ -193,6 +194,16 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {!foodLoading && !debouncedQuery && foods.length > 0 && (
+        <section className="mt-10">
+          <FeaturedCarousel
+            items={foods.slice(0, 8)}
+            onAdd={addToCart}
+            addingId={addBusy}
+          />
+        </section>
+      )}
 
       {isAuthenticated && favoriteFoods.length > 0 && !debouncedQuery && (
         <section className="mt-10">
