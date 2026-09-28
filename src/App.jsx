@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -54,9 +54,11 @@ export default function App() {
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/favorites" element={<ProtectedRoute roles={['customer', 'restaurant_owner', 'delivery_agent', 'admin']}><Favorites /></ProtectedRoute>} />
               <Route path="/hq" element={<ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>} />
               <Route path="/rider" element={<ProtectedRoute roles={['delivery_agent', 'admin']}><RiderDashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute roles={['restaurant_owner', 'admin']}><Dashboard /></ProtectedRoute>} />
+              <Route path="/menu" element={<Navigate to="/restaurants" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
