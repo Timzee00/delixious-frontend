@@ -106,7 +106,7 @@ export default function Login() {
 
             <div className="mt-10 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-5 text-xs text-white/45">
               <Link to="/" className="transition-colors hover:text-white">Home</Link>
-              <Link to="/menu" className="transition-colors hover:text-white">Browse menu</Link>
+              <Link to="/restaurants" className="transition-colors hover:text-white">Browse menu</Link>
               <Link to="/signup" className="transition-colors hover:text-white">Create account</Link>
             </div>
           </div>
