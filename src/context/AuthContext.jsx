@@ -3,6 +3,7 @@ import api, { refreshSession, setUnauthorizedHandler } from '../lib/api.js';
 import { setCsrfToken } from '../lib/csrf.js';
 
 const AuthContext = createContext(null);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,27 +18,47 @@ export function AuthProvider({ children }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    try {
-      const { data } = await api.get('/auth/me');
-      return applySession(data);
-    } catch (error) {
-      // If the short-lived access cookie has disappeared but the long-lived
-      // refresh cookie is still valid, recover the session without forcing the
-      // user to log in again. This is especially important after browser
-      // restarts and on browsers with stricter cookie handling.
-      if (error.response?.status === 401 && error.response?.data?.code === 'NO_SESSION') {
-        try {
-          const { data } = await refreshSession();
-          return applySession(data);
-        } catch {
-          // No usable refresh session remains.
-        }
-      }
+    let lastError = null;
 
+    // A fresh browser can briefly be offline, waking from sleep, or waiting
+    // for its first network connection. Retry bootstrap before deciding that
+    // the user is logged out instead of bouncing them to /login prematurely.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const { data } = await api.get('/auth/me');
+        return applySession(data);
+      } catch (error) {
+        lastError = error;
+
+        // If the access cookie is missing/expired, try the long-lived refresh
+        // cookie once. refreshSession is intentionally allowed without a CSRF
+        // header by the backend because it is itself authenticated by the
+        // httpOnly refresh cookie.
+        const code = error.response?.data?.code;
+        if (error.response?.status === 401 && (code === 'NO_SESSION' || code === 'TOKEN_EXPIRED')) {
+          try {
+            const { data } = await refreshSession();
+            return applySession(data);
+          } catch (refreshError) {
+            lastError = refreshError;
+          }
+        }
+
+        if (!error.response && attempt === 0) {
+          await sleep(350);
+          continue;
+        }
+        break;
+      }
+    }
+
+    // Only clear an existing session when the server explicitly says it is
+    // invalid/forbidden. Network failures must not wipe a valid local auth UI.
+    if (lastError?.response?.status === 401 || lastError?.response?.status === 403) {
       setUser(null);
       setProfile(null);
-      return null;
     }
+    return null;
   }, [applySession]);
 
   useEffect(() => {
