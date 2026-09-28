@@ -47,7 +47,7 @@ export default function Navbar() {
             </NavLink>
           )}
           {profile?.role === 'admin' && (
-  <NavLink to="/hq" className={linkClass}>
+  <NavLink to="/admin" className={linkClass}>
     Admin
   </NavLink>
 )}
