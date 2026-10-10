@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import api, { refreshSession, setUnauthorizedHandler } from '../lib/api.js';
 import { setCsrfToken } from '../lib/csrf.js';
 
@@ -9,6 +9,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Prevent an older startup request from overwriting a newer login.
+  const sessionGeneration = useRef(0);
 
   const applySession = useCallback((data) => {
     setUser(data.user);
@@ -19,6 +21,8 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = useCallback(async () => {
     let lastError = null;
+    const generation = sessionGeneration.current;
+    const isCurrent = () => generation === sessionGeneration.current;
 
     // A fresh browser can briefly be offline, waking from sleep, or waiting
     // for its first network connection. Retry bootstrap before deciding that
@@ -26,7 +30,7 @@ export function AuthProvider({ children }) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         const { data } = await api.get('/auth/me');
-        return applySession(data);
+        return isCurrent() ? applySession(data) : null;
       } catch (error) {
         lastError = error;
 
@@ -38,7 +42,7 @@ export function AuthProvider({ children }) {
         if (error.response?.status === 401 && (code === 'NO_SESSION' || code === 'TOKEN_EXPIRED')) {
           try {
             const { data } = await refreshSession();
-            return applySession(data);
+            return isCurrent() ? applySession(data) : null;
           } catch (refreshError) {
             lastError = refreshError;
           }
@@ -54,7 +58,7 @@ export function AuthProvider({ children }) {
 
     // Only clear an existing session when the server explicitly says it is
     // invalid/forbidden. Network failures must not wipe a valid local auth UI.
-    if (lastError?.response?.status === 401 || lastError?.response?.status === 403) {
+    if (isCurrent() && (lastError?.response?.status === 401 || lastError?.response?.status === 403)) {
       setUser(null);
       setProfile(null);
     }
@@ -74,6 +78,7 @@ export function AuthProvider({ children }) {
   }, [refreshProfile]);
 
   async function login(email, password) {
+    sessionGeneration.current += 1;
     const { data } = await api.post('/auth/login', { email, password });
     applySession(data);
     return data;
@@ -88,6 +93,7 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    sessionGeneration.current += 1;
     try {
       await api.post('/auth/logout');
     } catch {
