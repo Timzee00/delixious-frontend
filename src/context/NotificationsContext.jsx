@@ -17,13 +17,30 @@ export function NotificationsProvider({ children }) {
       const { data } = await api.get('/notifications/unread-count');
       setUnreadCount(data.unread_count || 0);
     } catch {
-      setUnreadCount(0);
+      // Preserve the last known count during transient network errors.
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadCount(0);
+      return undefined;
+    }
+
     refreshUnreadCount();
-  }, [refreshUnreadCount]);
+    // Refresh while this tab is visible and after returning from another tab.
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refreshUnreadCount();
+    }, 30000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshUnreadCount();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(poll);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [isAuthenticated, refreshUnreadCount]);
 
   return (
     <NotificationsContext.Provider value={{ unreadCount, refreshUnreadCount }}>
