@@ -60,7 +60,8 @@ api.interceptors.response.use(
         await refreshSession();
         return api(config);
       } catch (refreshError) {
-        unauthorizedHandler?.();
+        // The refresh may have raced with a newer successful login.
+        // Let the auth provider reconcile the session instead of clearing it here.
         return Promise.reject(refreshError);
       }
     }
@@ -72,7 +73,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (response?.status === 401) unauthorizedHandler?.();
+    // A 401 from a separate endpoint must not destroy a valid login session.
+    // Session invalidation is owned by the explicit auth bootstrap/refresh flow.
     return Promise.reject(error);
   }
 );
