@@ -1,1 +1,5 @@
-/*    /index.html   200
+# API must proxy to Render before the SPA fallback.
+/api/*  https://delixious-backend.onrender.com/api/:splat  200!
+
+# Client-side React routes fallback only after API rule.
+/*  /index.html  200
