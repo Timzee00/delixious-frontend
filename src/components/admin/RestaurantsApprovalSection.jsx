@@ -5,15 +5,19 @@ export default function RestaurantsApprovalSection() {
   const [restaurants, setRestaurants] = useState(null);
   const [filter, setFilter] = useState('pending');
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     load();
-  }, [filter]);
+  }, [filter, page]);
 
   async function load() {
     try {
-      const { data } = await adminApi.listRestaurants({ status: filter || undefined, limit: 50 });
+      const { data } = await adminApi.listRestaurants({ status: filter || undefined, page, limit: 20 });
       setRestaurants(data.restaurants);
+      setTotal(data.total || 0);
+      setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load restaurants.');
     }
@@ -34,7 +38,7 @@ export default function RestaurantsApprovalSection() {
         {['pending', 'approved', 'rejected', ''].map((s) => (
           <button
             key={s || 'all'}
-            onClick={() => setFilter(s)}
+            onClick={() => { setFilter(s); setPage(1); }}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               filter === s ? 'bg-pepper text-white' : 'bg-sand text-ink-soft hover:text-ink'
             }`}
@@ -77,6 +81,13 @@ export default function RestaurantsApprovalSection() {
           </div>
         ))}
       </div>
+      <nav className="mt-5 flex items-center justify-between gap-3 border-t border-hairline pt-4" aria-label="restaurants pagination">
+        <span className="text-sm text-ink-soft">Page {page} · {total.toLocaleString()} total</span>
+        <div className="flex gap-2">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Next</button>
+        </div>
+      </nav>
     </div>
   );
       }
