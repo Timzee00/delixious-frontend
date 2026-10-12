@@ -6,6 +6,7 @@ import { getCsrfToken, setCsrfToken } from './csrf.js';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
+  timeout: 10000, // Avoid indefinitely hanging requests on sleeping/free backend instances.
 });
 
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete']);
