@@ -3,6 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+    --color-ink: 36 21 18;
+    --color-ink-soft: 107 91 82;
+    --color-sand: 246 238 224;
+    --color-paper: 255 255 255;
+    --color-hairline: 232 220 200;
+    --color-pepper: 225 70 29;
+    --color-pepper-dark: 184 51 15;
+    --color-gold: 242 169 59;
+    --color-jade: 47 143 91;
+    --color-jade-soft: 228 243 234;
+    --color-danger: 192 57 43;
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --color-ink: 247 237 221;
+    --color-ink-soft: 196 179 162;
+    --color-sand: 34 26 17;
+    --color-paper: 31 31 31;
+    --color-hairline: 72 61 49;
+    --color-pepper: 252 126 86;
+    --color-pepper-dark: 239 99 57;
+    --color-gold: 247 186 91;
+    --color-jade: 94 197 140;
+    --color-jade-soft: 35 62 49;
+    --color-danger: 255 135 125;
+  }
+  body { background: rgb(var(--color-sand)); color: rgb(var(--color-ink)); }
+
   :focus-visible {
     outline: 2px solid theme('colors.pepper.DEFAULT');
     outline-offset: 2px;
@@ -23,8 +53,8 @@
 @layer components {
   .ticket {
     position: relative;
-    background: theme('colors.paper');
-    border: 1px solid theme('colors.hairline');
+    background: rgb(var(--color-paper));
+    border: 1px solid rgb(var(--color-hairline));
     border-radius: 0.75rem;
     overflow: visible;
   }
@@ -36,13 +66,13 @@
     transform: translateY(-50%);
     width: 14px;
     height: 14px;
-    background: theme('colors.sand');
-    border: 1px solid theme('colors.hairline');
+    background: rgb(var(--color-sand));
+    border: 1px solid rgb(var(--color-hairline));
     border-radius: 9999px;
   }
   .ticket::before { left: -8px; }
   .ticket::after { right: -8px; }
-  .ticket-divider { border-top: 1px dashed theme('colors.hairline'); }
+  .ticket-divider { border-top: 1px dashed rgb(var(--color-hairline)); }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 }
