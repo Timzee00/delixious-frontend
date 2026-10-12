@@ -7,15 +7,19 @@ export default function UsersSection() {
   const [users, setUsers] = useState(null);
   const [role, setRole] = useState('');
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     load();
-  }, [role]);
+  }, [role, page]);
 
   async function load() {
     try {
-      const { data } = await adminApi.listUsers({ role: role || undefined, limit: 50 });
+      const { data } = await adminApi.listUsers({ role: role || undefined, page, limit: 20 });
       setUsers(data.users);
+      setTotal(data.total || 0);
+      setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load users.');
     }
@@ -34,7 +38,7 @@ export default function UsersSection() {
     <div>
       <select
         value={role}
-        onChange={(e) => setRole(e.target.value)}
+        onChange={(e) => { setRole(e.target.value); setPage(1); }}
         className="rounded-lg border border-hairline bg-paper px-3 py-1.5 text-sm text-ink"
       >
         {ROLES.map((r) => (
@@ -65,6 +69,13 @@ export default function UsersSection() {
           </div>
         ))}
       </div>
+      <nav className="mt-5 flex items-center justify-between gap-3 border-t border-hairline pt-4" aria-label="users pagination">
+        <span className="text-sm text-ink-soft">Page {page} · {total.toLocaleString()} total</span>
+        <div className="flex gap-2">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Next</button>
+        </div>
+      </nav>
     </div>
   );
                              }
