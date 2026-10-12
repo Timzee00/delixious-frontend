@@ -4,15 +4,19 @@ import { adminApi } from '../../lib/adminApi.js';
 export default function RidersApprovalSection() {
   const [riders, setRiders] = useState(null);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [page]);
 
   async function load() {
     try {
-      const { data } = await adminApi.listRiders({ limit: 50 });
+      const { data } = await adminApi.listRiders({ page, limit: 20 });
       setRiders(data.riders);
+      setTotal(data.total || 0);
+      setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load riders.');
     }
@@ -60,6 +64,13 @@ export default function RidersApprovalSection() {
           </div>
         ))}
       </div>
+      <nav className="mt-5 flex items-center justify-between gap-3 border-t border-hairline pt-4" aria-label="riders pagination">
+        <span className="text-sm text-ink-soft">Page {page} · {total.toLocaleString()} total</span>
+        <div className="flex gap-2">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Next</button>
+        </div>
+      </nav>
     </div>
   );
             }
