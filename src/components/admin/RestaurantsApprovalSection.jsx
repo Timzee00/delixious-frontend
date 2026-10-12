@@ -59,7 +59,7 @@ export default function RestaurantsApprovalSection() {
               <p className="font-medium text-ink">{r.name}</p>
               <p className="text-sm text-ink-soft">{r.address}</p>
               <p className="mt-1 text-xs uppercase tracking-wide text-ink-soft">
-                Status: {r.approval_status} {r.paystack_subaccount_code ? '· has payout account' : '· no payout account yet'}
+                Status: {r.approval_status} {r.payout_ready ? '· payout ready' : '· payout setup required'}
               </p>
             </div>
             {r.approval_status !== 'approved' && (
