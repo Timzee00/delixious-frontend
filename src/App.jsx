@@ -27,6 +27,10 @@ const LegalPage = lazy(() => import('./pages/LegalPage.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
 const RiderDashboard = lazy(() => import('./pages/RiderDashboard.jsx'));
+const RestaurantCareers = lazy(() => import('./pages/RestaurantCareers.jsx'));
+const StaffWorkspace = lazy(() => import('./pages/StaffWorkspace.jsx'));
+const StaffJoin = lazy(() => import('./pages/StaffJoin.jsx'));
+
 
 export default function App() {
   return (
@@ -40,6 +44,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/restaurants" element={<Restaurants />} />
               <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+              <Route path="/restaurants/:id/careers" element={<RestaurantCareers />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/about" element={<About />} />
@@ -56,6 +61,8 @@ export default function App() {
               <Route path="/hq" element={<ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>} />
               <Route path="/rider" element={<ProtectedRoute roles={['delivery_agent', 'admin']}><RiderDashboard /></ProtectedRoute>} />
+              <Route path="/staff" element={<ProtectedRoute><StaffWorkspace /></ProtectedRoute>} />
+              <Route path="/staff/join" element={<ProtectedRoute><StaffJoin /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute roles={['restaurant_owner', 'admin']}><Dashboard /></ProtectedRoute>} />
               <Route path="/menu" element={<Navigate to="/restaurants" replace />} />
