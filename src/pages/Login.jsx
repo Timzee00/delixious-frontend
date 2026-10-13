@@ -46,7 +46,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(form.email, form.password);
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+      navigate(location.state?.from ? `${location.state.from.pathname}${location.state.from.search || ''}` : '/', { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Could not log in. Check your details and try again.');
     } finally {
