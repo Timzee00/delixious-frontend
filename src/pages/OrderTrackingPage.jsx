@@ -4,14 +4,19 @@ import api from '../lib/api.js';
 import supabase from '../lib/supabase.js';
 import { formatNaira } from '../lib/format.js';
 import ConfirmModal from '../components/ConfirmModal.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const STEPS = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
 
 export default function OrderTrackingPage() {
   const { id } = useParams();
+  const { user } = useAuth();
 
   const [order, setOrder] = useState(null);
   const [tracking, setTracking] = useState(null);
+  const [deliveryCode, setDeliveryCode] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [codeLoading, setCodeLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
@@ -67,6 +72,22 @@ export default function OrderTrackingPage() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (!order || !user || order.user_id !== user.id || order.payment_status !== 'paid'
+      || !tracking?.delivery_agent_id || !['assigned','picked_up','en_route'].includes(tracking.status)
+      || order.status === 'delivered') {
+      setDeliveryCode('');
+      return;
+    }
+    let active = true;
+    setCodeLoading(true);
+    api.get(`/delivery/${id}/proof-code`)
+      .then(({ data }) => { if (active) { setDeliveryCode(data.code); setCodeError(''); } })
+      .catch((err) => { if (active) setCodeError(err.response?.data?.error || 'Handoff code is temporarily unavailable.'); })
+      .finally(() => { if (active) setCodeLoading(false); });
+    return () => { active = false; };
+  }, [id, order?.user_id, order?.payment_status, order?.status, user?.id, tracking?.delivery_agent_id, tracking?.status]);
+
   async function handleCancel() {
     setCancelling(true);
     try {
@@ -119,7 +140,7 @@ export default function OrderTrackingPage() {
 
   const stepIndex = STEPS.indexOf(order.status);
   const isCancelled = order.status === 'cancelled';
-  const canCancel = ['pending', 'confirmed'].includes(order.status);
+  const canCancel = ['pending', 'confirmed'].includes(order.status) && order.payment_status === 'failed';
   const mapsUrl =
     tracking?.current_lat && tracking?.current_lng
       ? `https://www.google.com/maps?q=${tracking.current_lat},${tracking.current_lng}`
@@ -179,6 +200,20 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {order.user_id === user?.id && tracking?.delivery_agent_id && tracking.status !== 'delivered' && !isCancelled && (
+          <section className="mt-6 rounded-xl border border-jade bg-jade-soft p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-jade">Secure delivery handoff</p>
+            <h3 className="mt-2 font-display text-lg font-bold text-ink">Your delivery confirmation code</h3>
+            {codeLoading && <p role="status" className="mt-2 text-sm text-ink-soft">Loading your code...</p>}
+            {deliveryCode && <p className="mt-3 font-mono text-3xl font-bold tracking-[0.25em] text-ink">{deliveryCode}</p>}
+            {codeError && <p role="alert" className="mt-2 text-sm text-danger">{codeError}</p>}
+            <p className="mt-3 text-sm leading-6 text-ink-soft">
+              Give this code only to the rider who brings your order. Do not share it before receiving the food.
+              A correct code is required to complete delivery.
+            </p>
+          </section>
+        )}
+
         <div className="ticket-divider mt-6 pt-4">
           <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink-soft">Items</h3>
           <div className="mt-2 space-y-1">
@@ -194,6 +229,12 @@ export default function OrderTrackingPage() {
           <p className="mt-2 text-xs text-ink-soft">Delivering to: {order.delivery_address}</p>
         </div>
 
+        {order.payment_status === 'paid' && order.status === 'pending' && (
+          <p className="mt-5 rounded-xl bg-sand p-4 text-sm text-ink-soft">Payment received. Waiting for the restaurant to accept your order.</p>
+        )}
+        {['pending','paid'].includes(order.payment_status) && ['pending','confirmed'].includes(order.status) && (
+          <p className="mt-3 text-sm text-ink-soft">Need to cancel? Payments still processing or already paid require support review and, where applicable, a refund. <Link to="/contact" className="font-semibold text-pepper hover:underline">Contact support</Link>.</p>
+        )}
         {canCancel && (
           <button onClick={() => setConfirmCancel(true)} className="mt-6 text-sm font-medium text-danger hover:underline">
             Cancel this order

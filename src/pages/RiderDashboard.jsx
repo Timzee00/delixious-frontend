@@ -5,17 +5,19 @@ import MyDeliveriesSection from '../components/rider/MyDeliveriesSection.jsx';
 import EarningsSection from '../components/rider/EarningsSection.jsx';
 import PayoutSetupSection from '../components/rider/PayoutSetupSection.jsx';
 
-const TABS = ['Available', 'My Deliveries', 'Earnings', 'Payout Setup'];
+const TABS = ['Available Jobs', 'My Deliveries', 'Earnings', 'Payout Setup'];
 
 export default function RiderDashboard() {
   const { profile } = useAuth();
-  const [tab, setTab] = useState('Available');
+  const [tab, setTab] = useState('Available Jobs');
 
   const isApproved = profile?.rider_approval_status === 'approved';
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <h1 className="font-display text-2xl font-bold text-ink">Rider Dashboard</h1>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <p className="text-xs font-bold uppercase tracking-wider text-pepper">Delixious delivery partners</p>
+      <h1 className="mt-2 font-display text-3xl font-bold text-ink">Your rider workspace</h1>
+      <p className="mt-2 text-sm text-ink-soft">Find available deliveries, manage assigned jobs, review earnings and payout setup.</p>
 
       {!isApproved && (
         <p className="mt-4 rounded-lg bg-sand px-3 py-2 text-sm text-ink-soft">
@@ -39,7 +41,7 @@ export default function RiderDashboard() {
       </div>
 
       <div className="mt-6">
-        {tab === 'Available' && (isApproved ? <AvailableDeliveriesSection /> : <p className="text-sm text-ink-soft">Awaiting approval.</p>)}
+        {tab === 'Available Jobs' && (isApproved ? <AvailableDeliveriesSection onClaim={() => setTab('My Deliveries')} /> : <p className="text-sm text-ink-soft">Awaiting approval.</p>)}
         {tab === 'My Deliveries' && <MyDeliveriesSection />}
         {tab === 'Earnings' && <EarningsSection />}
         {tab === 'Payout Setup' && <PayoutSetupSection />}

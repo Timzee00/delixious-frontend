@@ -3,6 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('delixious-theme');
+          document.documentElement.dataset.theme = saved === 'dark' || saved === 'light'
+            ? saved
+            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
     <title>Delixious - Order food from your favorite local spots</title>
     <meta name="description" content="Order food from local restaurants near you, track your delivery in real time, and pay securely with Paystack." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

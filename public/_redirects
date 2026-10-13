@@ -1,1 +1,8 @@
-/*    /index.html   200
+# API must proxy to Render before the SPA fallback.
+/api/*  https://delixious-backend.onrender.com/api/:splat  200!
+
+# Dynamic server-rendered Open Graph previews for WhatsApp, X, Facebook, etc.
+/share/*  https://delixious-backend.onrender.com/share/:splat  200!
+
+# Client-side React routes fallback only after API and share rules.
+/*  /index.html  200

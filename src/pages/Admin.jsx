@@ -5,8 +5,9 @@ import RestaurantsApprovalSection from '../components/admin/RestaurantsApprovalS
 import RidersApprovalSection from '../components/admin/RidersApprovalSection.jsx';
 import UsersSection from '../components/admin/UsersSection.jsx';
 import BroadcastSection from '../components/admin/BroadcastSection.jsx';
+import EmailOperationsSection from '../components/admin/EmailOperationsSection.jsx';
 
-const TABS = ['Overview', 'Restaurants', 'Riders', 'Users', 'Orders', 'Broadcast'];
+const TABS = ['Overview', 'Restaurants', 'Riders', 'Users', 'Orders', 'Broadcast', 'Email Delivery'];
 
 function AdminOrdersSection() {
   const [orders, setOrders] = useState(null);
@@ -94,6 +95,7 @@ export default function Admin() {
         {tab === 'Users' && <UsersSection />}
         {tab === 'Orders' && <AdminOrdersSection />}
         {tab === 'Broadcast' && <BroadcastSection />}
+        {tab === 'Email Delivery' && <EmailOperationsSection />}
       </div>
     </div>
   );

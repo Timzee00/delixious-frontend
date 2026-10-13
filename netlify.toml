@@ -15,6 +15,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/share/*"
+  to = "https://delixious-backend.onrender.com/share/:splat"
+  status = 200
+  force = true
+
 # React Router SPA fallback. This must remain after the API proxy so /api/*
 # is never swallowed by index.html.
 [[redirects]]

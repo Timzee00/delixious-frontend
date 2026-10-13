@@ -46,7 +46,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(form.email, form.password);
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+      navigate(location.state?.from ? `${location.state.from.pathname}${location.state.from.search || ''}` : '/', { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Could not log in. Check your details and try again.');
     } finally {
@@ -107,7 +107,7 @@ export default function Login() {
             <div className="mt-10 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-5 text-xs text-white/45">
               <Link to="/" className="transition-colors hover:text-white">Home</Link>
               <Link to="/restaurants" className="transition-colors hover:text-white">Browse menu</Link>
-              <Link to="/signup" className="transition-colors hover:text-white">Create account</Link>
+              <Link to="/signup" state={{ from: location.state?.from }} className="transition-colors hover:text-white">Create account</Link>
             </div>
           </div>
         </section>

@@ -14,6 +14,7 @@ const CUISINES = ['All', 'Nigerian', 'Continental', 'Chinese', 'Fast Food', 'Gri
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
+  const [reloadKey, setReloadKey] = useState(0);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [cuisine, setCuisine] = useState('All');
@@ -77,7 +78,7 @@ export default function Home() {
 
     loadFoods();
     return () => { cancelled = true; };
-  }, [debouncedQuery, cuisine]);
+  }, [debouncedQuery, cuisine, reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +98,7 @@ export default function Home() {
 
     loadRestaurants();
     return () => { cancelled = true; };
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,7 +233,7 @@ export default function Home() {
         {foodLoading ? (
           <div className="mt-5"><GridSkeleton /></div>
         ) : foodError ? (
-          <div className="mt-5"><ErrorState message={foodError} /></div>
+          <div className="mt-5"><ErrorState message={foodError} /><button type="button" onClick={() => setReloadKey((n) => n + 1)} className="mt-3 rounded-lg border border-hairline bg-paper px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">Try again</button></div>
         ) : foods.length ? (
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {foods.map((item) => <FoodCard key={item.id} item={item} onAdd={addToCart} adding={addBusy === item.id} />)}
@@ -253,7 +254,7 @@ export default function Home() {
         {restaurantLoading ? (
           <div className="mt-5"><GridSkeleton /></div>
         ) : restaurantError ? (
-          <div className="mt-5"><ErrorState message={restaurantError} /></div>
+          <div className="mt-5"><ErrorState message={restaurantError} /><button type="button" onClick={() => setReloadKey((n) => n + 1)} className="mt-3 rounded-lg border border-hairline bg-paper px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">Try again</button></div>
         ) : restaurants.length ? (
           <div className="no-scrollbar mt-5 flex snap-x gap-5 overflow-x-auto pb-3">
             {restaurants.map((restaurant) => (

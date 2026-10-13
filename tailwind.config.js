@@ -4,15 +4,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#241512',
-        'ink-soft': '#6B5B52',
-        sand: '#F6EEE0',
-        paper: '#FFFFFF',
-        hairline: '#E8DCC8',
-        pepper: { DEFAULT: '#E1461D', dark: '#B8330F' },
-        gold: '#F2A93B',
-        jade: { DEFAULT: '#2F8F5B', soft: '#E4F3EA' },
-        danger: '#C0392B',
+        ink: 'rgb(var(--color-ink) / <alpha-value>)',
+        'ink-soft': 'rgb(var(--color-ink-soft) / <alpha-value>)',
+        sand: 'rgb(var(--color-sand) / <alpha-value>)',
+        paper: 'rgb(var(--color-paper) / <alpha-value>)',
+        hairline: 'rgb(var(--color-hairline) / <alpha-value>)',
+        pepper: { DEFAULT: 'rgb(var(--color-pepper) / <alpha-value>)', dark: 'rgb(var(--color-pepper-dark) / <alpha-value>)' },
+        gold: 'rgb(var(--color-gold) / <alpha-value>)',
+        jade: { DEFAULT: 'rgb(var(--color-jade) / <alpha-value>)', soft: 'rgb(var(--color-jade-soft) / <alpha-value>)' },
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Space Grotesk"', 'sans-serif'],
