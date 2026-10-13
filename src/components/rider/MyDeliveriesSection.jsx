@@ -14,6 +14,7 @@ export default function MyDeliveriesSection() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
   const [error, setError] = useState('');
+  const [proofCodes, setProofCodes] = useState({});
 
   const load = useCallback(async () => {
     setError('');
@@ -32,10 +33,16 @@ export default function MyDeliveriesSection() {
   async function advance(delivery) {
     const status = nextStatus(delivery.status);
     if (!status) return;
+    const proofCode = proofCodes[delivery.order_id] || '';
+    if (status === 'delivered' && !/^[0-9]{6}$/.test(proofCode)) {
+      setError('Ask the customer for their six-digit handoff code after delivering the order.');
+      return;
+    }
     setUpdating(delivery.order_id);
     setError('');
     try {
-      await api.patch(`/delivery/${delivery.order_id}/status`, { status });
+      await api.patch(`/delivery/${delivery.order_id}/status`, status === 'delivered' ? { status, proof_code: proofCode } : { status });
+      if (status === 'delivered') setProofCodes((previous) => ({ ...previous, [delivery.order_id]: '' }));
       await load();
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to update delivery status.');
@@ -80,6 +87,19 @@ export default function MyDeliveriesSection() {
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
                   <span className="text-ink-soft">Payout: <strong className="text-ink">{formatMoney(order?.rider_payout_amount)}</strong></span>
+                  {next === 'delivered' && (
+                    <label className="block text-sm font-semibold text-ink">
+                      Customer handoff code
+                      <input type="text" inputMode="numeric" autoComplete="off" pattern="[0-9]{6}" maxLength={6}
+                        placeholder="6-digit code"
+                        value={proofCodes[delivery.order_id] || ''}
+                        onChange={(event) => setProofCodes((old) => ({
+                          ...old, [delivery.order_id]: event.target.value.replace(/[^0-9]/g,'').slice(0,6),
+                        }))}
+                        className="mt-1 block w-40 rounded-lg border border-hairline bg-paper px-3 py-2 font-mono text-ink" />
+                      <span className="mt-1 block text-xs font-normal text-ink-soft">Only request the code after handing the order to the customer. Five incorrect attempts require support.</span>
+                    </label>
+                  )}
                   {next && (
                     <button type="button" disabled={updating === delivery.order_id} onClick={() => advance(delivery)} className="rounded-lg bg-pepper px-4 py-2 font-semibold text-white disabled:opacity-60">
                       {updating === delivery.order_id ? 'Updating...' : next === 'picked_up' ? 'Mark picked up' : next === 'en_route' ? 'Mark en route' : 'Mark delivered'}
