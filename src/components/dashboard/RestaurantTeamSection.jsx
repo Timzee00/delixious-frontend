@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../../lib/api.js';
 
 const ROLES = [
-  ['manager', 'Manager — manage restaurant operations'],
+  ['manager', 'Manager — order confirmations and menu availability'],
   ['kitchen', 'Kitchen — view and prepare orders'],
   ['counter', 'Counter — confirm paid orders'],
 ];
