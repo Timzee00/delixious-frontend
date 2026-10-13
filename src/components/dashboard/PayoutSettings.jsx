@@ -8,6 +8,8 @@ export default function PayoutSettings({ restaurant, onUpdated }) {
   const [providerMode, setProviderMode] = useState('');
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -33,6 +35,28 @@ export default function PayoutSettings({ restaurant, onUpdated }) {
     return () => { active = false; };
   }, [restaurant.id]);
 
+  async function verifyAccount() {
+    setError('');
+    setMessage('');
+    setVerified(null);
+    if (!bankCode || !/^\d{10}$/.test(accountNumber)) {
+      setError('Select a bank and enter exactly 10 digits.');
+      return;
+    }
+    setVerifying(true);
+    try {
+      const { data } = await api.post(`/restaurants/${restaurant.id}/verify-bank-details`, {
+        bank_code: bankCode,
+        account_number: accountNumber,
+      });
+      setVerified({ ...data, bankCode, accountNumber });
+    } catch (err) {
+      setError(err.response?.data?.error || 'Account verification failed. Please try again.');
+    } finally {
+      setVerifying(false);
+    }
+  }
+
   async function connect(e) {
     e.preventDefault();
     setError('');
@@ -41,7 +65,11 @@ export default function PayoutSettings({ restaurant, onUpdated }) {
       setError('Select your bank and enter exactly 10 digits for your account number.');
       return;
     }
-    if (!window.confirm('Connect this bank account to receive restaurant payouts? To change an existing account later, contact support.')) return;
+    if (!verified || verified.bankCode !== bankCode || verified.accountNumber !== accountNumber) {
+      setError('Verify the account holder name before connecting a payout account.');
+      return;
+    }
+    if (!window.confirm(`Connect ${verified.account_name} at ${verified.bank_name} (ending ${verified.account_last4})? Changes require support verification.`)) return;
     setSaving(true);
     try {
       const { data } = await api.post(`/restaurants/${restaurant.id}/bank-details`, {
@@ -51,6 +79,7 @@ export default function PayoutSettings({ restaurant, onUpdated }) {
       onUpdated(data.restaurant);
       setAccountNumber('');
       setBankCode('');
+      setVerified(null);
       setMessage(data.message || 'Payout account connected successfully.');
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to connect this account. Please try again.');
@@ -83,7 +112,7 @@ export default function PayoutSettings({ restaurant, onUpdated }) {
           {providerMode && <p className="rounded-lg bg-sand px-3 py-2 text-xs font-medium text-ink-soft">Paystack environment: {providerMode === 'test' ? 'Test mode — no real payouts' : 'Live mode'}</p>}
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-ink">Bank</span>
-            <select value={bankCode} onChange={(e) => setBankCode(e.target.value)}
+            <select value={bankCode} onChange={(e) => { setBankCode(e.target.value); setVerified(null); }}
               disabled={loadingBanks || saving || !statusKnown}
               required className="w-full rounded-lg border border-hairline bg-paper px-3 py-3 text-ink">
               <option value="">{loadingBanks ? 'Loading supported banks...' : 'Choose a bank'}</option>
@@ -93,14 +122,27 @@ export default function PayoutSettings({ restaurant, onUpdated }) {
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-ink">10-digit account number</span>
             <input type="text" inputMode="numeric" autoComplete="off" pattern="[0-9]{10}" maxLength={10}
-              value={accountNumber} onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              value={accountNumber} onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setVerified(null); }}
               disabled={saving || !statusKnown} required
               className="w-full rounded-lg border border-hairline bg-paper px-3 py-3 text-ink" placeholder="Enter 10 digits" />
           </label>
           <p className="text-xs text-ink-soft">Your bank information is sent to the authenticated backend for verification. It is never stored in browser preferences.</p>
-          <button type="submit" disabled={saving || loadingBanks || !statusKnown || !banks.length}
-            className="rounded-lg bg-pepper px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
-            {saving ? 'Verifying with Paystack...' : 'Verify and connect bank'}
+          <button type="button" onClick={verifyAccount}
+            disabled={verifying || saving || loadingBanks || !statusKnown || !bankCode || accountNumber.length !== 10}
+            className="rounded-lg border border-pepper px-5 py-3 text-sm font-semibold text-pepper disabled:opacity-50">
+            {verifying ? 'Checking bank account...' : '1. Verify account holder'}
+          </button>
+          {verified && (
+            <div className="rounded-xl border border-jade bg-jade-soft p-4" role="status">
+              <p className="text-xs font-semibold uppercase tracking-wide text-jade">Account holder verified</p>
+              <p className="mt-1 font-semibold text-ink">{verified.account_name}</p>
+              <p className="mt-1 text-sm text-ink-soft">{verified.bank_name} · Ending {verified.account_last4}</p>
+              <p className="mt-2 text-xs text-ink-soft">Confirm this name belongs to the restaurant's authorized payout recipient.</p>
+            </div>
+          )}
+          <button type="submit" disabled={saving || verifying || !verified}
+            className="block rounded-lg bg-pepper px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {saving ? 'Connecting account...' : '2. Confirm & connect payout'}
           </button>
         </form>
       )}
