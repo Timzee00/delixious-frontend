@@ -50,6 +50,12 @@ export default function Navbar() {
               Orders
             </NavLink>
           )}
+          {isAuthenticated && (
+            <NavLink to="/staff" className={linkClass}>Staff</NavLink>
+          )}
+          {profile?.role === 'delivery_agent' && (
+            <NavLink to="/rider" className={linkClass}>Deliveries</NavLink>
+          )}
           {(profile?.role === 'restaurant_owner' || profile?.role === 'admin') && (
             <NavLink to="/dashboard" className={linkClass}>
               Dashboard
@@ -148,6 +154,8 @@ export default function Navbar() {
                 Orders
               </NavLink>
             )}
+            {isAuthenticated && <NavLink to="/staff" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>Staff</NavLink>}
+            {profile?.role === 'delivery_agent' && <NavLink to="/rider" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>Deliveries</NavLink>}
             {(profile?.role === 'restaurant_owner' || profile?.role === 'admin') && (
               <NavLink to="/dashboard" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
                 Dashboard
