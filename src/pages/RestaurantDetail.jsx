@@ -77,20 +77,21 @@ export default function RestaurantDetail() {
   if (loadError && !restaurant) return <div className="mx-auto max-w-4xl px-4 py-16 text-center"><p className="text-ink-soft">{loadError}</p><Link to="/restaurants" className="mt-4 inline-block text-pepper hover:underline">Back to restaurants</Link></div>;
 
   const categories = Object.entries(grouped);
+  const acceptingOrders = restaurant.accepting_orders ?? restaurant.is_open;
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <div className="ticket overflow-hidden p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0"><h1 className="font-display text-2xl font-bold text-ink">{restaurant.name}</h1>{restaurant.cuisine_type && <p className="mt-1 text-sm text-ink-soft">{restaurant.cuisine_type}</p>}{restaurant.address && <p className="mt-1 text-xs text-ink-soft">{restaurant.address}</p>}</div>
-          <div className="flex shrink-0 items-center gap-2"><FavoriteButton active={isFavorite} onClick={toggleFavorite} disabled={!isAuthenticated || favoriteBusy} /><span className={`rounded-full px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wide ${restaurant.is_open ? 'bg-jade text-white' : 'bg-ink-soft text-white'}`}>{restaurant.is_open ? 'Open' : 'Closed'}</span></div>
+          <div className="flex shrink-0 items-center gap-2"><FavoriteButton active={isFavorite} onClick={toggleFavorite} disabled={!isAuthenticated || favoriteBusy} /><span className={`rounded-full px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wide ${acceptingOrders ? 'bg-jade text-white' : 'bg-ink-soft text-white'}`}>{acceptingOrders ? 'Open' : 'Closed'}</span></div>
         </div>
         {restaurant.rating_count > 0 && <p className="mt-3 font-mono text-sm text-gold">★ {restaurant.rating_avg} ({restaurant.rating_count} reviews)</p>}
         {restaurant.description && <p className="mt-3 text-sm text-ink-soft">{restaurant.description}</p>}
         {!isAuthenticated && <p className="mt-3 text-xs text-ink-soft">Log in to save this restaurant to your favorites.</p>}
       </div>
       {actionError && <p className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{actionError}</p>}
-      {!restaurant.is_open && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">This restaurant is currently closed and not accepting orders.</p>}
-      <div className="mt-8 space-y-8">{categories.length === 0 && <p className="text-center text-ink-soft">This restaurant hasn't added any available menu items yet.</p>}{categories.map(([category, items]) => <div key={category}><h2 className="font-display text-lg font-bold text-ink">{category}</h2><div className="mt-3 space-y-3">{items.map((item) => <MenuItemRow key={item.id} item={item} status={itemStatus[item.id]} onAdd={() => handleAdd(item)} />)}</div></div>)}</div>
+      {!acceptingOrders && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">This restaurant is currently closed and not accepting orders.</p>}
+      <div className="mt-8 space-y-8">{categories.length === 0 && <p className="text-center text-ink-soft">This restaurant hasn't added any available menu items yet.</p>}{categories.map(([category, items]) => <div key={category}><h2 className="font-display text-lg font-bold text-ink">{category}</h2><div className="mt-3 space-y-3">{items.map((item) => <MenuItemRow key={item.id} item={item} status={itemStatus[item.id]} restaurantClosed={!acceptingOrders} onAdd={() => handleAdd(item)} />)}</div></div>)}</div>
       {conflict && <ConfirmModal title="Switch restaurants?" message={conflict.message} confirmLabel="Replace cart" onCancel={() => setConflict(null)} onConfirm={() => handleAdd(conflict.item, true)} />}
     </div>
   );
