@@ -78,6 +78,7 @@ export default function RestaurantDetail() {
 
   const categories = Object.entries(grouped);
   const acceptingOrders = restaurant.accepting_orders ?? restaurant.is_open;
+  const checkoutReady = restaurant.checkout_ready ?? acceptingOrders;
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <div className="ticket overflow-hidden p-6 sm:p-8">
@@ -91,8 +92,8 @@ export default function RestaurantDetail() {
         {!isAuthenticated && <p className="mt-3 text-xs text-ink-soft">Log in to save this restaurant to your favorites.</p>}
       </div>
       {actionError && <p className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{actionError}</p>}
-      {!acceptingOrders && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">{restaurant.availability_reason === 'temporarily_paused' ? 'This restaurant is temporarily pausing new orders.' : restaurant.availability_reason === 'outside_hours' ? 'This restaurant is outside its scheduled business hours.' : 'This restaurant is currently closed and not accepting orders.'}</p>}
-      <div className="mt-8 space-y-8">{categories.length === 0 && <p className="text-center text-ink-soft">This restaurant hasn't added any available menu items yet.</p>}{categories.map(([category, items]) => <div key={category}><h2 className="font-display text-lg font-bold text-ink">{category}</h2><div className="mt-3 space-y-3">{items.map((item) => <MenuItemRow key={item.id} item={item} status={itemStatus[item.id]} restaurantClosed={!acceptingOrders} onAdd={() => handleAdd(item)} />)}</div></div>)}</div>
+      {!checkoutReady && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">{restaurant.checkout_unavailable_reason === 'payments_not_ready' ? 'This restaurant is listed, but online ordering is not available until payment setup is complete.' : restaurant.availability_reason === 'temporarily_paused' ? 'This restaurant is temporarily pausing new orders.' : restaurant.availability_reason === 'outside_hours' ? 'This restaurant is outside its scheduled business hours.' : 'This restaurant is currently closed and not accepting orders.'}</p>}
+      <div className="mt-8 space-y-8">{categories.length === 0 && <p className="text-center text-ink-soft">This restaurant hasn't added any available menu items yet.</p>}{categories.map(([category, items]) => <div key={category}><h2 className="font-display text-lg font-bold text-ink">{category}</h2><div className="mt-3 space-y-3">{items.map((item) => <MenuItemRow key={item.id} item={item} status={itemStatus[item.id]} restaurantClosed={!checkoutReady} onAdd={() => handleAdd(item)} />)}</div></div>)}</div>
       {conflict && <ConfirmModal title="Switch restaurants?" message={conflict.message} confirmLabel="Replace cart" onCancel={() => setConflict(null)} onConfirm={() => handleAdd(conflict.item, true)} />}
     </div>
   );
