@@ -4,6 +4,7 @@ import RestaurantProfileSection from '../components/dashboard/RestaurantProfileS
 import MenuManagementSection from '../components/dashboard/MenuManagementSection.jsx';
 import OrdersQueueSection from '../components/dashboard/OrdersQueueSection.jsx';
 import MerchantSettings from '../components/dashboard/MerchantSettings.jsx';
+import MerchantOrderSummary from '../components/dashboard/MerchantOrderSummary.jsx';
 
 const TABS = ['Overview', 'Profile', 'Menu', 'Orders', 'Settings'];
 
@@ -93,6 +94,7 @@ export default function Dashboard() {
       <div className="mt-6">
         {tab === 'Overview' && (
           <div className="space-y-5">
+            <MerchantOrderSummary key={activeId} restaurant={activeRestaurant} onOpenOrders={() => setTab('Orders')} />
             <section className="grid gap-4 md:grid-cols-3">
               <button type="button" onClick={() => setTab('Orders')} className="rounded-2xl border border-hairline bg-paper p-6 text-left hover:border-pepper">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Orders</p>
