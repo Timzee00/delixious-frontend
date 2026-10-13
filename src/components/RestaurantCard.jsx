@@ -21,7 +21,7 @@ export default function RestaurantCard({ restaurant, isFavorite = false, onToggl
           </div>
         )}
         <span className="absolute bottom-3 left-3 rounded-full bg-paper/95 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink">
-          {restaurant.is_open ? 'Open' : 'Closed'}
+          {(restaurant.accepting_orders ?? restaurant.is_open) ? 'Open' : 'Closed'}
         </span>
       </div>
       <Link to={`/restaurants/${restaurant.id}`} className="block p-4">
