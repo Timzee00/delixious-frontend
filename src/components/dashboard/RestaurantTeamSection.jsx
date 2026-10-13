@@ -7,9 +7,9 @@ const ROLES = [
   ['counter', 'Counter — confirm paid orders'],
 ];
 
-export default function RestaurantTeamSection({ restaurant }) {
+export default function RestaurantTeamSection({ restaurant, initialEmail = '', onInviteCreated }) {
   const [team, setTeam] = useState({ members: [], invites: [] });
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [staffRole, setStaffRole] = useState('kitchen');
   const [latestLink, setLatestLink] = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,7 @@ export default function RestaurantTeamSection({ restaurant }) {
       });
       setLatestLink(data.invite_url);
       setEmail('');
+      onInviteCreated?.();
       setNotice('Invitation created. Share the single-use link privately with the intended recipient.');
       await refresh();
     } catch (err) {
