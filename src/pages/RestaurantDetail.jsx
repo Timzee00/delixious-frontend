@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import MenuItemRow from '../components/MenuItemRow.jsx';
 import FavoriteButton from '../components/FavoriteButton.jsx';
+import Img from '../components/Img.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 
 export default function RestaurantDetail() {
@@ -18,6 +19,7 @@ export default function RestaurantDetail() {
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [shareNotice, setShareNotice] = useState('');
   const [actionError, setActionError] = useState('');
   const [itemStatus, setItemStatus] = useState({});
   const [conflict, setConflict] = useState(null);
@@ -44,6 +46,21 @@ export default function RestaurantDetail() {
     load();
     return () => { cancelled = true; };
   }, [id, isAuthenticated]);
+
+  async function shareRestaurant() {
+    const url = `${window.location.origin}/share/restaurants/${id}`;
+    try {
+      if (navigator.share) await navigator.share({ title: restaurant?.name || 'Delixious restaurant', url });
+      else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareNotice('Restaurant link copied. Share it on WhatsApp, Facebook or anywhere you like.');
+      } else {
+        setShareNotice(`Share this link: ${url}`);
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') setShareNotice(`Share this link: ${url}`);
+    }
+  }
 
   async function toggleFavorite() {
     if (!isAuthenticated || favoriteBusy) return;
@@ -81,7 +98,34 @@ export default function RestaurantDetail() {
   const checkoutReady = restaurant.checkout_ready ?? acceptingOrders;
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <div className="ticket overflow-hidden p-6 sm:p-8">
+      <section className="overflow-hidden rounded-2xl border border-hairline bg-paper">
+        <Img src={restaurant.cover_image_url || restaurant.logo_url} alt={restaurant.name}
+          fallbackText={restaurant.name?.[0]} frameClassName="h-40 w-full bg-hairline sm:h-64"
+          imgClassName="h-full w-full object-cover" />
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
+          <div className="flex items-center gap-3">
+            <Img src={restaurant.logo_url} alt={restaurant.name} fallbackText={restaurant.name?.[0]}
+              frameClassName="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-hairline bg-sand"
+              imgClassName="h-full w-full object-cover" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-pepper">Restaurant storefront</p>
+              <p className="text-xs text-ink-soft">Explore the menu, learn about the business and share with friends.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={shareRestaurant}
+              className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">
+              Share restaurant
+            </button>
+            <Link to={`/restaurants/${id}/careers`}
+              className="rounded-lg bg-pepper px-4 py-2 text-sm font-semibold text-white">
+              Careers & hiring
+            </Link>
+          </div>
+        </div>
+      </section>
+      {shareNotice && <p role="status" className="mt-3 rounded-lg bg-jade-soft p-3 text-sm text-jade">{shareNotice}</p>}
+      <div className="ticket mt-5 overflow-hidden p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0"><h1 className="font-display text-2xl font-bold text-ink">{restaurant.name}</h1>{restaurant.cuisine_type && <p className="mt-1 text-sm text-ink-soft">{restaurant.cuisine_type}</p>}{restaurant.address && <p className="mt-1 text-xs text-ink-soft">{restaurant.address}</p>}</div>
           <div className="flex shrink-0 items-center gap-2"><FavoriteButton active={isFavorite} onClick={toggleFavorite} disabled={!isAuthenticated || favoriteBusy} /><span className={`rounded-full px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wide ${acceptingOrders ? 'bg-jade text-white' : 'bg-ink-soft text-white'}`}>{acceptingOrders ? 'Open' : 'Closed'}</span></div>
