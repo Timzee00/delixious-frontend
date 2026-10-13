@@ -140,7 +140,7 @@ export default function OrderTrackingPage() {
 
   const stepIndex = STEPS.indexOf(order.status);
   const isCancelled = order.status === 'cancelled';
-  const canCancel = ['pending', 'confirmed'].includes(order.status);
+  const canCancel = ['pending', 'confirmed'].includes(order.status) && order.payment_status !== 'paid';
   const mapsUrl =
     tracking?.current_lat && tracking?.current_lng
       ? `https://www.google.com/maps?q=${tracking.current_lat},${tracking.current_lng}`
@@ -229,6 +229,12 @@ export default function OrderTrackingPage() {
           <p className="mt-2 text-xs text-ink-soft">Delivering to: {order.delivery_address}</p>
         </div>
 
+        {order.payment_status === 'paid' && order.status === 'pending' && (
+          <p className="mt-5 rounded-xl bg-sand p-4 text-sm text-ink-soft">Payment received. Waiting for the restaurant to accept your order.</p>
+        )}
+        {order.payment_status === 'paid' && ['pending','confirmed'].includes(order.status) && (
+          <p className="mt-3 text-sm text-ink-soft">Need to cancel? Paid orders require an assisted cancellation and refund. <Link to="/contact" className="font-semibold text-pepper hover:underline">Contact support</Link>.</p>
+        )}
         {canCancel && (
           <button onClick={() => setConfirmCancel(true)} className="mt-6 text-sm font-medium text-danger hover:underline">
             Cancel this order
