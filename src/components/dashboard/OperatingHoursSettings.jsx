@@ -4,6 +4,8 @@ import api from '../../lib/api.js';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DEFAULT = {
   schedule_enabled: false,
+  prep_time_minutes: 30,
+  paused_until: null,
   weekly_hours: DAYS.map((_, weekday) => ({
     weekday, closed: weekday === 0, opens: '09:00', closes: '21:00',
   })),
@@ -25,7 +27,7 @@ export default function OperatingHoursSettings({ restaurant }) {
     setAvailable(false);
     api.get(`/restaurants/${restaurant.id}/operating-settings`).then(({ data }) => {
       if (!active) return;
-      setSettings(data.settings);
+      setSettings({ ...DEFAULT, ...data.settings });
       setAvailable(true);
     }).catch((err) => {
       if (active) setError(err.response?.data?.error || 'Operating hours service is not available yet.');
@@ -46,13 +48,22 @@ export default function OperatingHoursSettings({ restaurant }) {
     e.preventDefault();
     setError('');
     setNotice('');
+    if (Number(settings.prep_time_minutes) < 10 || Number(settings.prep_time_minutes) > 180) {
+      setError('Preparation time must be between 10 and 180 minutes.');
+      return;
+    }
     if (settings.weekly_hours.some((day) => !day.closed && day.opens === day.closes)) {
       setError('Opening and closing times cannot be the same.');
       return;
     }
     setSaving(true);
     try {
-      const { data } = await api.put(`/restaurants/${restaurant.id}/operating-settings`, settings);
+      const { data } = await api.put(`/restaurants/${restaurant.id}/operating-settings`, {
+        schedule_enabled: settings.schedule_enabled,
+        weekly_hours: settings.weekly_hours,
+        prep_time_minutes: Number(settings.prep_time_minutes),
+        paused_until: settings.paused_until,
+      });
       setSettings(data.settings);
       setNotice('Operating hours saved. Checkout will honor the schedule when enabled.');
     } catch (err) {
@@ -81,6 +92,44 @@ export default function OperatingHoursSettings({ restaurant }) {
               <strong className="block text-sm text-ink">Use scheduled opening hours at checkout</strong>
               <span className="mt-1 block text-xs text-ink-soft">When disabled, only your manual Open/Paused status controls availability. New accounts start with schedules disabled.</span>
             </span>
+          </label>
+          <section className="space-y-3 rounded-xl border border-hairline p-4">
+            <div>
+              <h3 className="text-base font-bold text-ink">Temporary pause</h3>
+              <p className="mt-1 text-sm text-ink-soft">
+                Stop accepting new orders temporarily without unpublishing your menu.
+                Orders automatically resume when the pause expires, provided your restaurant is manually open and within its schedule.
+              </p>
+            </div>
+            <p className="text-sm font-medium text-ink">
+              {settings.paused_until && new Date(settings.paused_until) > new Date()
+                ? `Paused until ${new Date(settings.paused_until).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })} WAT`
+                : 'No active temporary pause'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[{ label: 'Pause 1 hour', hours: 1 }, { label: 'Pause 4 hours', hours: 4 }, { label: 'Pause 24 hours', hours: 24 }].map((option) => (
+                <button key={option.hours} type="button" disabled={!available || saving}
+                  onClick={() => setSettings((old) => ({ ...old, paused_until: new Date(Date.now() + option.hours * 3600000).toISOString() }))}
+                  className="rounded-lg border border-hairline bg-sand px-3 py-2 text-sm font-medium text-ink hover:border-pepper disabled:opacity-40">
+                  {option.label}
+                </button>
+              ))}
+              <button type="button" disabled={!available || saving}
+                onClick={() => setSettings((old) => ({ ...old, paused_until: null }))}
+                className="rounded-lg border border-hairline px-3 py-2 text-sm font-medium text-pepper hover:border-pepper disabled:opacity-40">
+                Clear pause
+              </button>
+            </div>
+            <p className="text-xs text-ink-soft">Press Save operating settings below to apply the selected pause.</p>
+          </section>
+          <label className="block rounded-xl border border-hairline p-4">
+            <span className="block text-sm font-bold text-ink">Typical preparation time (minutes)</span>
+            <span className="mt-1 block text-xs text-ink-soft">Shown to customers as a kitchen-preparation estimate, not a delivery guarantee.</span>
+            <input type="number" min={10} max={180} step={5}
+              value={settings.prep_time_minutes ?? 30}
+              onChange={(e) => setSettings((old) => ({ ...old, prep_time_minutes: Number(e.target.value) }))}
+              disabled={!available || saving}
+              className="mt-3 w-28 rounded-lg border border-hairline bg-paper px-3 py-2 text-ink" required />
           </label>
           <div className="grid gap-2">
             {settings.weekly_hours?.map((day) => (
