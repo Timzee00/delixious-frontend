@@ -87,10 +87,11 @@ export default function RestaurantDetail() {
         </div>
         {restaurant.rating_count > 0 && <p className="mt-3 font-mono text-sm text-gold">★ {restaurant.rating_avg} ({restaurant.rating_count} reviews)</p>}
         {restaurant.description && <p className="mt-3 text-sm text-ink-soft">{restaurant.description}</p>}
+        {restaurant.estimated_prep_minutes && <p className="mt-3 text-sm text-ink-soft">Estimated kitchen preparation: {restaurant.estimated_prep_minutes} minutes (delivery time not included).</p>}
         {!isAuthenticated && <p className="mt-3 text-xs text-ink-soft">Log in to save this restaurant to your favorites.</p>}
       </div>
       {actionError && <p className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{actionError}</p>}
-      {!acceptingOrders && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">This restaurant is currently closed and not accepting orders.</p>}
+      {!acceptingOrders && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">{restaurant.availability_reason === 'temporarily_paused' ? 'This restaurant is temporarily pausing new orders.' : restaurant.availability_reason === 'outside_hours' ? 'This restaurant is outside its scheduled business hours.' : 'This restaurant is currently closed and not accepting orders.'}</p>}
       <div className="mt-8 space-y-8">{categories.length === 0 && <p className="text-center text-ink-soft">This restaurant hasn't added any available menu items yet.</p>}{categories.map(([category, items]) => <div key={category}><h2 className="font-display text-lg font-bold text-ink">{category}</h2><div className="mt-3 space-y-3">{items.map((item) => <MenuItemRow key={item.id} item={item} status={itemStatus[item.id]} restaurantClosed={!acceptingOrders} onAdd={() => handleAdd(item)} />)}</div></div>)}</div>
       {conflict && <ConfirmModal title="Switch restaurants?" message={conflict.message} confirmLabel="Replace cart" onCancel={() => setConflict(null)} onConfirm={() => handleAdd(conflict.item, true)} />}
     </div>
