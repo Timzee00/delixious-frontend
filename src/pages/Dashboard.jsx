@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [activeId, setActiveId] = useState(null);
   const [tab, setTab] = useState('Overview');
   const [error, setError] = useState('');
+  const [shareNotice, setShareNotice] = useState('');
 
   useEffect(() => { load(); }, []);
 
@@ -41,6 +42,22 @@ export default function Dashboard() {
   }
 
   const activeRestaurant = restaurants?.find((r) => r.id === activeId) || null;
+
+  async function shareStorefront() {
+    if (!activeId) return;
+    const url = `${window.location.origin}/share/restaurants/${activeId}`;
+    try {
+      if (navigator.share) await navigator.share({ title: activeRestaurant?.name || 'Restaurant', url });
+      else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareNotice('Your restaurant social link has been copied.');
+      } else setShareNotice(url);
+    } catch (err) {
+      if (err?.name !== 'AbortError') setShareNotice(url);
+    }
+  }
+
+
 
   if (restaurants === null) {
     return <div className="mx-auto max-w-6xl px-4 py-16 text-center text-sm text-ink-soft" role="status">Loading your business workspace...</div>;
@@ -74,6 +91,21 @@ export default function Dashboard() {
             </label>
           )}
         </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button type="button" onClick={shareStorefront}
+            className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-pepper hover:border-pepper">
+            Share your restaurant
+          </button>
+          <button type="button" onClick={() => setTab('Hiring')}
+            className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">
+            Publish a vacancy
+          </button>
+          <button type="button" onClick={() => setTab('Team')}
+            className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">
+            Invite staff
+          </button>
+        </div>
+        {shareNotice && <p role="status" className="mt-2 rounded-lg bg-jade-soft p-3 text-sm text-jade">{shareNotice}</p>}
         <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
           <span className="rounded-full bg-sand px-3 py-1.5 capitalize text-ink">Approval: {activeRestaurant?.approval_status || 'pending'}</span>
           <span className={`rounded-full px-3 py-1.5 ${activeRestaurant?.is_open ? 'bg-jade-soft text-jade' : 'bg-sand text-ink-soft'}`}>
