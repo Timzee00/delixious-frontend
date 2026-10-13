@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState('Overview');
   const [error, setError] = useState('');
   const [shareNotice, setShareNotice] = useState('');
+  const [inviteCandidateEmail, setInviteCandidateEmail] = useState('');
 
   useEffect(() => { load(); }, []);
 
@@ -156,8 +157,8 @@ export default function Dashboard() {
         {tab === 'Profile' && <RestaurantProfileSection key={activeId} restaurant={activeRestaurant} onUpdated={handleRestaurantUpdated} />}
         {tab === 'Menu' && <MenuManagementSection key={activeId} restaurant={activeRestaurant} />}
         {tab === 'Orders' && <OrdersQueueSection key={activeId} restaurant={activeRestaurant} />}
-        {tab === 'Team' && <RestaurantTeamSection key={activeId} restaurant={activeRestaurant} />}
-        {tab === 'Hiring' && <RestaurantHiringSection key={activeId} restaurant={activeRestaurant} />}
+        {tab === 'Team' && <RestaurantTeamSection key={activeId} restaurant={activeRestaurant} initialEmail={inviteCandidateEmail} onInviteCreated={() => setInviteCandidateEmail('')} />}
+        {tab === 'Hiring' && <RestaurantHiringSection key={activeId} restaurant={activeRestaurant} onInviteApplicant={(email) => { setInviteCandidateEmail(email); setTab('Team'); }} />}
         {tab === 'Settings' && (
           <MerchantSettings restaurant={activeRestaurant} onUpdated={handleRestaurantUpdated}
             openProfile={() => setTab('Profile')} openMenu={() => setTab('Menu')} />
