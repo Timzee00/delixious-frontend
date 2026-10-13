@@ -7,7 +7,7 @@ const JOB_TYPES = [
 ];
 const empty = { title: '', description: '', location: '', job_type: 'full_time', published: false };
 
-export default function RestaurantHiringSection({ restaurant }) {
+export default function RestaurantHiringSection({ restaurant, onInviteApplicant }) {
   const [jobs, setJobs] = useState([]);
   const [form, setForm] = useState(empty);
   const [applications, setApplications] = useState({});
@@ -155,7 +155,13 @@ export default function RestaurantHiringSection({ restaurant }) {
                         {['new','reviewing','shortlisted','rejected'].map((status) => <option key={status} value={status} disabled={status === 'new'}>{status}</option>)}
                       </select>
                     </label>
-                    <p className="mt-2 text-xs text-ink-soft">To hire, invite the successful applicant through Team settings using their verified email.</p>
+                    <p className="mt-2 text-xs text-ink-soft">Only shortlisted candidates should be invited to staff access. Invitations are email-bound.</p>
+                    {app.status === 'shortlisted' && (
+                      <button type="button" onClick={() => onInviteApplicant?.(app.applicant_email)}
+                        className="mt-2 rounded-lg border border-pepper px-3 py-2 text-xs font-semibold text-pepper">
+                        Invite shortlisted candidate to team
+                      </button>
+                    )
                   </div>)}
                 </div>
               </div>}
