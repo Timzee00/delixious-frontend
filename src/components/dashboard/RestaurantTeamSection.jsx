@@ -46,7 +46,9 @@ export default function RestaurantTeamSection({ restaurant, initialEmail = '', o
       setLatestLink(data.invite_url);
       setEmail('');
       onInviteCreated?.();
-      setNotice('Invitation created. Share the single-use link privately with the intended recipient.');
+      setNotice(data.email_queued
+        ? 'Invitation queued for email delivery. You can also share the single-use link privately.'
+        : 'Automatic email is unavailable. Share the invitation link privately with the intended recipient.');
       await refresh();
     } catch (err) {
       setError(err.response?.data?.error || 'Could not create this invitation.');
