@@ -5,8 +5,10 @@ import MenuManagementSection from '../components/dashboard/MenuManagementSection
 import OrdersQueueSection from '../components/dashboard/OrdersQueueSection.jsx';
 import MerchantSettings from '../components/dashboard/MerchantSettings.jsx';
 import MerchantOrderSummary from '../components/dashboard/MerchantOrderSummary.jsx';
+import RestaurantTeamSection from '../components/dashboard/RestaurantTeamSection.jsx';
+import RestaurantHiringSection from '../components/dashboard/RestaurantHiringSection.jsx';
 
-const TABS = ['Overview', 'Profile', 'Menu', 'Orders', 'Settings'];
+const TABS = ['Overview', 'Profile', 'Menu', 'Orders', 'Team', 'Hiring', 'Settings'];
 
 export default function Dashboard() {
   const [restaurants, setRestaurants] = useState(null);
@@ -122,6 +124,8 @@ export default function Dashboard() {
         {tab === 'Profile' && <RestaurantProfileSection key={activeId} restaurant={activeRestaurant} onUpdated={handleRestaurantUpdated} />}
         {tab === 'Menu' && <MenuManagementSection key={activeId} restaurant={activeRestaurant} />}
         {tab === 'Orders' && <OrdersQueueSection key={activeId} restaurant={activeRestaurant} />}
+        {tab === 'Team' && <RestaurantTeamSection key={activeId} restaurant={activeRestaurant} />}
+        {tab === 'Hiring' && <RestaurantHiringSection key={activeId} restaurant={activeRestaurant} />}
         {tab === 'Settings' && (
           <MerchantSettings restaurant={activeRestaurant} onUpdated={handleRestaurantUpdated}
             openProfile={() => setTab('Profile')} openMenu={() => setTab('Menu')} />
