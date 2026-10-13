@@ -31,6 +31,7 @@ export default function RestaurantCard({ restaurant, isFavorite = false, onToggl
         </div>
         {restaurant.cuisine_type && <p className="mt-1 truncate text-sm text-ink-soft">{restaurant.cuisine_type}</p>}
         {restaurant.address && <p className="mt-2 truncate text-xs text-ink-soft">{restaurant.address}</p>}
+        {restaurant.checkout_unavailable_reason === 'payments_not_ready' && <p className="mt-2 text-xs font-semibold text-pepper">Online ordering not yet active</p>}
       </Link>
     </article>
   );
