@@ -6,7 +6,7 @@ const METRICS = [
   ['Confirmed', 'confirmed'],
   ['Preparing', 'preparing'],
   ['Out for delivery', 'out_for_delivery'],
-  ['Orders today', 'orders_today'],
+  ['Paid orders today', 'orders_today'],
 ];
 
 export default function MerchantOrderSummary({ restaurant, onOpenOrders }) {
@@ -42,7 +42,7 @@ export default function MerchantOrderSummary({ restaurant, onOpenOrders }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-bold text-ink">Live order operations</h2>
-          <p className="mt-1 text-sm text-ink-soft">Counts are specific to this restaurant, and orders today use Lagos time.</p>
+          <p className="mt-1 text-sm text-ink-soft">Only paid orders are counted. Today uses Lagos local time.</p>
         </div>
         <button type="button" onClick={() => refresh()} disabled={status === 'loading'}
           className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50">
