@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api.js';
+import StaffMenuAvailability from '../components/staff/StaffMenuAvailability.jsx';
 
 function StaffOrderQueue({ membership }) {
   const [orders, setOrders] = useState(null);
@@ -124,7 +125,11 @@ export default function StaffWorkspace() {
         <p className="mt-2 text-sm text-ink-soft">Ask the restaurant owner for an invitation to the email address on your Delixious account.</p>
         <Link to="/profile" className="mt-3 inline-block text-sm font-semibold text-pepper">Check your profile</Link>
       </section>}
-      {membership && <div className="mt-6"><StaffOrderQueue key={membership.restaurant_id} membership={membership}/></div>}
+      {membership && <div className="mt-6 space-y-5">
+        <StaffOrderQueue key={membership.restaurant_id} membership={membership}/>
+        {['owner','manager','kitchen'].includes(membership.staff_role) &&
+          <StaffMenuAvailability key={membership.restaurant_id} membership={membership}/>}
+      </div>}
     </div>
   );
 }
