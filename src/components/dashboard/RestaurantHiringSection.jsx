@@ -74,6 +74,7 @@ export default function RestaurantHiringSection({ restaurant }) {
   }
 
   const careersUrl = `${window.location.origin}/restaurants/${restaurant.id}/careers`;
+  const careersShareUrl = `${window.location.origin}/share/careers/${restaurant.id}`;
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-hairline bg-paper p-5 sm:p-7">
@@ -82,7 +83,7 @@ export default function RestaurantHiringSection({ restaurant }) {
         <p className="mt-2 text-sm text-ink-soft">Applicants see your restaurant's name, photos, location and open positions. Publish a vacancy before promoting its shareable link.</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <a href={careersUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-pepper">Preview careers page</a>
-          <button type="button" onClick={() => navigator.clipboard?.writeText(careersUrl).then(() => setNotice('Careers page link copied.')).catch(() => setError('Copy the careers URL from your browser address bar.'))}
+          <button type="button" onClick={() => navigator.clipboard?.writeText(careersShareUrl).then(() => setNotice('Careers page link copied.')).catch(() => setError('Copy the careers URL from your browser address bar.'))}
             className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink">Copy careers link</button>
         </div>
       </section>
