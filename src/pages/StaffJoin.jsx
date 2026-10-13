@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../lib/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -10,6 +10,14 @@ export default function StaffJoin() {
   const [token, setToken] = useState(() => params.get('token') || '');
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Once the route has captured the secret, remove it from browser history
+    // to reduce shoulder-surfing, accidental copies and subsequent referrers.
+    if (token && window.location.search.includes('token=')) {
+      window.history.replaceState(window.history.state, '', window.location.pathname);
+    }
+  }, [token]);
 
   async function accept(event) {
     event.preventDefault();
