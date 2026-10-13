@@ -8,14 +8,10 @@ const PAGE_SIZE = 20;
 const NEXT_STATUS = {
   pending: 'confirmed',
   confirmed: 'preparing',
-  preparing: 'out_for_delivery',
-  out_for_delivery: 'delivered',
 };
 const NEXT_LABEL = {
   pending: 'Confirm order',
   confirmed: 'Start preparing',
-  preparing: 'Mark out for delivery',
-  out_for_delivery: 'Mark delivered',
 };
 
 const STATUS_STYLES = {
@@ -89,6 +85,7 @@ export default function OrdersQueueSection({ restaurant }) {
   return (
     <div>
       <h2 className="font-display text-lg font-bold text-ink">Incoming orders</h2>
+      <p className="mt-1 text-sm text-ink-soft">Confirm paid orders, prepare the food and assign a rider. Only the assigned rider can confirm pickup and delivery.</p>
       {error && (
         <p role="alert" aria-live="polite" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
