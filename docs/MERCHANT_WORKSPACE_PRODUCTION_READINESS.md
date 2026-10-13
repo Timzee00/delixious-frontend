@@ -9,7 +9,7 @@ Target: a usable restaurant operating system, not a collection of nonfunctional 
 | Profile/branding and media | Existing restaurant update and upload APIs | Owner can create, edit and view public listing |
 | Menu and item availability | Existing menu APIs | Changed price/stock appears publicly |
 | Order queue | Existing order management endpoints | Only authorized owner can update order state |
-| Payment onboarding | GET banks, POST bank-details, provider integration | Verify test account; only masked result visible; checkout uses test subaccount |
+| Payment onboarding | GET banks, POST bank-details, provider integration | Verify test account; only masked result visible; checkout refuses test/live mode mismatches |
 | Payout status | restaurant/mine, computed from provider code | UI distinguishes approved vs payout-ready |
 | Weekly operating hours | restaurant_operating_settings migration + owner GET/PUT | Closed periods shown on marketplace and block checkout; manual pause overrides |
 | Account password change | Auth current-password verification + server update | Correct current password required; existing browser signs out after change |
@@ -18,12 +18,12 @@ Target: a usable restaurant operating system, not a collection of nonfunctional 
 ## Release prerequisites and sequence
 
 1. Back up the production DB. Create **isolated staging** Supabase database with scrubbed/synthetic users, restaurants, and orders.
-2. Apply backend PR migrations in staging, including `profiles.is_suspended`, moderation indexes, and `restaurant_operating_settings`. DO NOT run baseline `schema.sql` over existing data.
+2. Apply backend PR migrations in staging, including `profiles.is_suspended`, moderation indexes, `restaurant_operating_settings`, and `restaurants.payout_mode`. Audit existing subaccounts before assigning modes. DO NOT run baseline `schema.sql` over existing data.
 3. Deploy backend development branch to an isolated staging service with **Paystack test keys**. Confirm correct Supabase URL and test credentials without exposing secrets in logs.
 4. Point the **staging frontend** to that same-origin staging backend. Keep public Netlify production locked.
 5. Pass automated tests, then confirm owner and customer journeys in Chrome, Firefox and Android.
 6. Verify all bank data is masked, other owners cannot read or change each other's settings, CSRF/roles/limits are enforced, and secret keys never reach the frontend.
-7. Confirm payment initialization and webhook idempotency using **test** payments. Do not send live bank or charge data during staging.
+7. Confirm payment initialization, payout-mode compatibility and webhook idempotency using **test** payments. Do not send live bank or charge data during staging.
 8. Capture performance and rollback evidence, then schedule a reviewed migration and deployment.
 
 ## Next essential modules — still NOT implemented
