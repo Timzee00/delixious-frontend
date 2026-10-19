@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import Img from './Img.jsx';
 import { formatNaira } from '../lib/format.js';
 
-export default function FoodCard({ item, onAdd, adding }) {
+export default function FoodCard({ item, onAdd, adding, isSaved = false, onToggleSaved, saveBusy = false }) {
   const restaurant = item.restaurants;
   return (
     <article className="ticket overflow-hidden transition-shadow hover:shadow-md">
@@ -37,6 +37,13 @@ export default function FoodCard({ item, onAdd, adding }) {
             {adding ? 'Adding...' : 'Add to cart'}
           </button>
         </div>
+        {onToggleSaved && (
+          <button type="button" aria-pressed={isSaved} disabled={saveBusy}
+            onClick={() => onToggleSaved(item)}
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-hairline px-3 py-2 text-xs font-semibold disabled:opacity-40 ${isSaved ? 'text-pepper' : 'text-ink-soft hover:border-pepper hover:text-pepper'}`}>
+            {isSaved ? '♥ Saved to your dishes' : '♡ Save this dish'}
+          </button>
+        )}
       </div>
     </article>
   );
