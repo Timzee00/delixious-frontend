@@ -230,7 +230,7 @@ export default function OrderTrackingPage() {
           <p className="mt-2 text-xs text-ink-soft">Delivering to: {order.delivery_address}</p>
         </div>
 
-        {order.user_id === user?.id && order.payment_status === 'paid' && (
+        {order.user_id === user?.id && order.payment_status === 'paid' && order.status === 'delivered' && (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-sand p-4">
             <div>
               <p className="font-semibold text-ink">Enjoyed this meal?</p>
