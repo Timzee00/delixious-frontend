@@ -18,6 +18,7 @@ const OrderConfirmation = lazy(() => import('./pages/OrderConfirmation.jsx'));
 const OrderHistory = lazy(() => import('./pages/OrderHistory.jsx'));
 const OrderTrackingPage = lazy(() => import('./pages/OrderTrackingPage.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
+const CommunicationPreferences = lazy(() => import('./pages/CommunicationPreferences.jsx'));
 const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const About = lazy(() => import('./pages/About.jsx'));
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="/staff" element={<ProtectedRoute><StaffWorkspace /></ProtectedRoute>} />
               <Route path="/staff/join" element={<ProtectedRoute><StaffJoin /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/preferences" element={<ProtectedRoute><CommunicationPreferences /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute roles={['restaurant_owner', 'admin']}><Dashboard /></ProtectedRoute>} />
               <Route path="/menu" element={<Navigate to="/restaurants" replace />} />
               <Route path="*" element={<NotFound />} />
