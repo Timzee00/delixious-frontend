@@ -143,9 +143,12 @@ export default function Home() {
       const saved = savedDishIds.has(item.id);
       if (saved) await api.delete(`/favorites/dishes/${item.id}`);
       else await api.post(`/favorites/dishes/${item.id}`);
-      const { data } = await api.get('/favorites/dishes', { params:{ page:1,limit:8 } });
-      setSavedDishes(data.dishes || []);
-      setSavedDishIds(new Set((data.dishes || []).map(i=>i.id)));
+      const [shelf, selection] = await Promise.all([
+        api.get('/favorites/dishes',{params:{page:1,limit:8}}),
+        api.get('/favorites/dish-ids'),
+      ]);
+      setSavedDishes(shelf.data.dishes || []);
+      setSavedDishIds(new Set(selection.data.ids || []));
     } catch(err){setSavedError(err.response?.data?.error || 'Could not save this dish.');}
     finally {setSavedBusy(null);}
   }
@@ -153,10 +156,12 @@ export default function Home() {
   useEffect(() => {
     let active = true;
     if (!isAuthenticated) { setSavedDishes([]);setSavedDishIds(new Set());return; }
-    api.get('/favorites/dishes',{params:{page:1,limit:8}})
-      .then(({data})=>{if(active){
-        setSavedDishes(data.dishes || []);
-        setSavedDishIds(new Set((data.dishes || []).map(i=>i.id)));
+    Promise.all([
+      api.get('/favorites/dishes',{params:{page:1,limit:8}}),
+      api.get('/favorites/dish-ids'),
+    ]).then(([shelf,selection])=>{if(active){
+        setSavedDishes(shelf.data.dishes || []);
+        setSavedDishIds(new Set(selection.data.ids || []));
       }})
       .catch(()=>{if(active)setSavedError('Saved dishes are temporarily unavailable.');});
     return ()=>{active=false;};
