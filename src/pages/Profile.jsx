@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import FormField from '../components/FormField.jsx';
@@ -109,6 +109,11 @@ export default function Profile() {
           {saving ? 'Saving...' : 'Save changes'}
         </button>
       </form>
+      <section className="ticket mt-6 p-6">
+        <h2 className="font-display text-lg font-bold text-ink">Notifications & privacy</h2>
+        <p className="mt-2 text-sm text-ink-soft">Choose optional emails and manage your consent. In-app order tracking always stays accessible.</p>
+        <Link to="/preferences" className="mt-3 inline-block text-sm font-semibold text-pepper hover:underline">Manage communication preferences →</Link>
+      </section>
       <form onSubmit={handlePasswordChange} className="ticket mt-6 space-y-4 p-6">
         <div>
           <h2 className="font-display text-xl font-bold text-ink">Password & account security</h2>
