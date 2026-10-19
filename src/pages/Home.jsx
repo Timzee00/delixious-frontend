@@ -7,6 +7,7 @@ import FoodCard from '../components/FoodCard.jsx';
 import RestaurantCard from '../components/RestaurantCard.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
+import ReturningCustomerShelf from '../components/home/ReturningCustomerShelf.jsx';
 import { GridSkeleton, EmptyState, ErrorState } from '../components/StateViews.jsx';
 
 const CUISINES = ['All', 'Nigerian', 'Continental', 'Chinese', 'Fast Food', 'Grills', 'Seafood', 'Pastries'];
@@ -217,6 +218,8 @@ export default function Home() {
           <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search for a dish..." aria-label="Search for a dish" className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-ink placeholder:text-ink-soft/60" />
         </div>
       </section>
+
+      {isAuthenticated && <ReturningCustomerShelf />}
 
       <div className="mt-6 flex flex-wrap gap-2">
         {CUISINES.map((item) => (
