@@ -5,6 +5,7 @@ import supabase from '../lib/supabase.js';
 import { formatNaira } from '../lib/format.js';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import ReorderButton from '../components/orders/ReorderButton.jsx';
 
 const STEPS = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
 
@@ -229,6 +230,15 @@ export default function OrderTrackingPage() {
           <p className="mt-2 text-xs text-ink-soft">Delivering to: {order.delivery_address}</p>
         </div>
 
+        {order.user_id === user?.id && order.payment_status === 'paid' && (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-sand p-4">
+            <div>
+              <p className="font-semibold text-ink">Enjoyed this meal?</p>
+              <p className="mt-1 text-xs text-ink-soft">Review the latest menu and repeat it in seconds.</p>
+            </div>
+            <ReorderButton orderId={order.id} compact />
+          </div>
+        )}
         {order.payment_status === 'paid' && order.status === 'pending' && (
           <p className="mt-5 rounded-xl bg-sand p-4 text-sm text-ink-soft">Payment received. Waiting for the restaurant to accept your order.</p>
         )}
