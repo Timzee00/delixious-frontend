@@ -7,21 +7,26 @@ export default function UsersSection() {
   const [users, setUsers] = useState(null);
   const [role, setRole] = useState('');
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     load();
-  }, [role]);
+  }, [role, page]);
 
   async function load() {
     try {
-      const { data } = await adminApi.listUsers({ role: role || undefined, limit: 50 });
+      const { data } = await adminApi.listUsers({ role: role || undefined, page, limit: 20 });
       setUsers(data.users);
+      setTotal(data.total || 0);
+      setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load users.');
     }
   }
 
   async function toggleSuspend(id, current) {
+    if (!window.confirm(current ? 'Restore this account\'s access?' : 'Suspend this account? The user will lose access until restored.')) return;
     try {
       await adminApi.setUserSuspension(id, !current);
       setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, is_suspended: !current } : u)));
@@ -34,7 +39,7 @@ export default function UsersSection() {
     <div>
       <select
         value={role}
-        onChange={(e) => setRole(e.target.value)}
+        onChange={(e) => { setRole(e.target.value); setPage(1); }}
         className="rounded-lg border border-hairline bg-paper px-3 py-1.5 text-sm text-ink"
       >
         {ROLES.map((r) => (
@@ -52,9 +57,11 @@ export default function UsersSection() {
           <div key={u.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-paper p-3">
             <div>
               <p className="font-medium text-ink">{u.full_name} <span className="text-xs text-ink-soft">({u.role})</span></p>
-              <p className="text-sm text-ink-soft">{u.email} · {u.phone}</p>
+              <p className="text-sm text-ink-soft">{u.phone || 'Phone not provided'}</p>
             </div>
             <button
+              disabled={u.role === 'admin'}
+              title={u.role === 'admin' ? 'Administrator accounts require privileged review' : undefined}
               onClick={() => toggleSuspend(u.id, u.is_suspended)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 u.is_suspended ? 'bg-jade text-white' : 'border border-hairline text-danger'
@@ -65,6 +72,13 @@ export default function UsersSection() {
           </div>
         ))}
       </div>
+      <nav className="mt-5 flex items-center justify-between gap-3 border-t border-hairline pt-4" aria-label="users pagination">
+        <span className="text-sm text-ink-soft">Page {page} · {total.toLocaleString()} total</span>
+        <div className="flex gap-2">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-hairline px-3 py-2 text-sm disabled:opacity-40">Next</button>
+        </div>
+      </nav>
     </div>
   );
                              }

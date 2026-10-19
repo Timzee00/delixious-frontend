@@ -7,6 +7,7 @@ import FoodCard from '../components/FoodCard.jsx';
 import RestaurantCard from '../components/RestaurantCard.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
+import ReturningCustomerShelf from '../components/home/ReturningCustomerShelf.jsx';
 import { GridSkeleton, EmptyState, ErrorState } from '../components/StateViews.jsx';
 
 const CUISINES = ['All', 'Nigerian', 'Continental', 'Chinese', 'Fast Food', 'Grills', 'Seafood', 'Pastries'];
@@ -14,11 +15,16 @@ const CUISINES = ['All', 'Nigerian', 'Continental', 'Chinese', 'Fast Food', 'Gri
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
+  const [reloadKey, setReloadKey] = useState(0);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [cuisine, setCuisine] = useState('All');
   const [foods, setFoods] = useState([]);
   const [favoriteFoods, setFavoriteFoods] = useState([]);
+  const [savedDishes, setSavedDishes] = useState([]);
+  const [savedDishIds, setSavedDishIds] = useState(new Set());
+  const [savedError, setSavedError] = useState('');
+  const [savedBusy, setSavedBusy] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [favoriteBusy, setFavoriteBusy] = useState(new Set());
@@ -77,7 +83,7 @@ export default function Home() {
 
     loadFoods();
     return () => { cancelled = true; };
-  }, [debouncedQuery, cuisine]);
+  }, [debouncedQuery, cuisine, reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +103,7 @@ export default function Home() {
 
     loadRestaurants();
     return () => { cancelled = true; };
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -129,6 +135,37 @@ export default function Home() {
     loadFavorites();
     return () => { cancelled = true; };
   }, [isAuthenticated]);
+
+  async function toggleSavedDish(item) {
+    if (!isAuthenticated) return setSavedError('Log in to save your favourite meals.');
+    setSavedBusy(item.id);setSavedError('');
+    try {
+      const saved = savedDishIds.has(item.id);
+      if (saved) await api.delete(`/favorites/dishes/${item.id}`);
+      else await api.post(`/favorites/dishes/${item.id}`);
+      const [shelf, selection] = await Promise.all([
+        api.get('/favorites/dishes',{params:{page:1,limit:8}}),
+        api.get('/favorites/dish-ids'),
+      ]);
+      setSavedDishes(shelf.data.dishes || []);
+      setSavedDishIds(new Set(selection.data.ids || []));
+    } catch(err){setSavedError(err.response?.data?.error || 'Could not save this dish.');}
+    finally {setSavedBusy(null);}
+  }
+
+  useEffect(() => {
+    let active = true;
+    if (!isAuthenticated) { setSavedDishes([]);setSavedDishIds(new Set());return; }
+    Promise.all([
+      api.get('/favorites/dishes',{params:{page:1,limit:8}}),
+      api.get('/favorites/dish-ids'),
+    ]).then(([shelf,selection])=>{if(active){
+        setSavedDishes(shelf.data.dishes || []);
+        setSavedDishIds(new Set(selection.data.ids || []));
+      }})
+      .catch(()=>{if(active)setSavedError('Saved dishes are temporarily unavailable.');});
+    return ()=>{active=false;};
+  },[isAuthenticated]);
 
   async function toggleFavorite(id) {
     if (!isAuthenticated) return;
@@ -187,6 +224,8 @@ export default function Home() {
         </div>
       </section>
 
+      {isAuthenticated && <ReturningCustomerShelf />}
+
       <div className="mt-6 flex flex-wrap gap-2">
         {CUISINES.map((item) => (
           <button key={item} type="button" onClick={() => setCuisine(item)} className={`rounded-full border px-3 py-1.5 text-sm font-medium ${cuisine === item ? 'border-pepper bg-pepper/10 text-pepper' : 'border-hairline text-ink-soft hover:border-ink-soft'}`}>
@@ -205,6 +244,26 @@ export default function Home() {
         </section>
       )}
 
+      {isAuthenticated && !debouncedQuery && savedDishes.length > 0 && (
+        <section className="mt-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-pepper">Your food shelf</p>
+              <h2 className="mt-1 font-display text-2xl font-bold text-ink">Dishes you've saved</h2>
+              <p className="mt-1 text-sm text-ink-soft">The meals you like, ready when you are.</p>
+            </div>
+            <Link to="/favorites" className="text-sm font-semibold text-pepper hover:underline">All saved dishes</Link>
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {savedDishes.map((item)=><FoodCard key={item.id} item={item}
+              isSaved={savedDishIds.has(item.id)} onToggleSaved={toggleSavedDish}
+              saveBusy={savedBusy===item.id}
+              onAdd={item.is_available ? addToCart : undefined} adding={addBusy===item.id} />)}
+          </div>
+        </section>
+      )}
+      {savedError && <p role="alert" className="mt-3 text-sm text-danger">{savedError}</p>}
+
       {isAuthenticated && favoriteFoods.length > 0 && !debouncedQuery && (
         <section className="mt-10">
           <div className="flex items-end justify-between gap-4">
@@ -216,7 +275,8 @@ export default function Home() {
           </div>
           {favoriteError && <p className="mt-3 text-sm text-ink-soft">{favoriteError}</p>}
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {favoriteFoods.map((item) => <FoodCard key={item.id} item={item} onAdd={addToCart} adding={addBusy === item.id} />)}
+            {favoriteFoods.map((item) => <FoodCard key={item.id} item={item} onAdd={addToCart} adding={addBusy === item.id}
+              isSaved={savedDishIds.has(item.id)} onToggleSaved={toggleSavedDish} saveBusy={savedBusy===item.id} />)}
           </div>
         </section>
       )}
@@ -232,10 +292,13 @@ export default function Home() {
         {foodLoading ? (
           <div className="mt-5"><GridSkeleton /></div>
         ) : foodError ? (
-          <div className="mt-5"><ErrorState message={foodError} /></div>
+          <div className="mt-5"><ErrorState message={foodError} /><button type="button" onClick={() => setReloadKey((n) => n + 1)} className="mt-3 rounded-lg border border-hairline bg-paper px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">Try again</button></div>
         ) : foods.length ? (
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {foods.map((item) => <FoodCard key={item.id} item={item} onAdd={addToCart} adding={addBusy === item.id} />)}
+            {foods.map((item) => <FoodCard key={item.id} item={item}
+              onAdd={addToCart} adding={addBusy === item.id}
+              isSaved={savedDishIds.has(item.id)} onToggleSaved={isAuthenticated ? toggleSavedDish : undefined}
+              saveBusy={savedBusy===item.id} />)}
           </div>
         ) : (
           <div className="mt-5"><EmptyState message="No dishes match that search yet." /></div>
@@ -253,7 +316,7 @@ export default function Home() {
         {restaurantLoading ? (
           <div className="mt-5"><GridSkeleton /></div>
         ) : restaurantError ? (
-          <div className="mt-5"><ErrorState message={restaurantError} /></div>
+          <div className="mt-5"><ErrorState message={restaurantError} /><button type="button" onClick={() => setReloadKey((n) => n + 1)} className="mt-3 rounded-lg border border-hairline bg-paper px-4 py-2 text-sm font-semibold text-ink hover:border-pepper">Try again</button></div>
         ) : restaurants.length ? (
           <div className="no-scrollbar mt-5 flex snap-x gap-5 overflow-x-auto pb-3">
             {restaurants.map((restaurant) => (

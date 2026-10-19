@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api.js';
 import { useCart } from '../context/CartContext.jsx';
 import { formatNaira } from '../lib/format.js';
@@ -9,6 +9,7 @@ import Img from '../components/Img.jsx';
 export default function Cart() {
   const { cart, refreshCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
@@ -91,6 +92,9 @@ export default function Cart() {
         </button>
       </div>
       {cartMeta?.restaurant && <p className="mt-1 text-sm text-ink-soft">From {cartMeta.restaurant.name}</p>}
+      {location.state?.reorderNotice && (
+        <p role="status" className="mt-4 rounded-xl bg-sand p-3 text-sm text-ink">{location.state.reorderNotice}</p>
+      )}
 
       {error && <p className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 

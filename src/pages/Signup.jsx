@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import FormField from '../components/FormField.jsx';
 
@@ -12,6 +12,8 @@ const ROLES = [
 export default function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const destination = location.state?.from ? `${location.state.from.pathname}${location.state.from.search || ''}` : '/';
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'customer' });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -24,9 +26,9 @@ export default function Signup() {
     try {
       const data = await signup(form);
       if (data.user) {
-        navigate('/', { replace: true });
+        navigate(destination, { replace: true });
       } else {
-        setMessage(data.message);
+        setMessage(data.message + ' After verifying your email, log in with the link below to continue your invitation.');
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Could not create your account. Please try again.');
@@ -97,7 +99,7 @@ export default function Signup() {
 
         <p className="mt-6 text-center text-sm text-ink-soft">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-pepper hover:underline">
+          <Link to="/login" state={{ from: location.state?.from }} className="font-medium text-pepper hover:underline">
             Log in
           </Link>
         </p>

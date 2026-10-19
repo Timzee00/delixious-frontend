@@ -1,11 +1,13 @@
 import axios from 'axios';
 import { getCsrfToken, setCsrfToken } from './csrf.js';
 
-// Production uses the same-origin Express API. VITE_API_URL remains available
-// for local development or a separately hosted API.
+// Production always uses the same-origin /api proxy (Netlify or unified Render).
+// Allow a configurable external API only during local Vite development.
+const apiBaseURL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || '/api');
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: apiBaseURL,
   withCredentials: true,
+  timeout: 10000, // Avoid indefinitely hanging requests on sleeping/free backend instances.
 });
 
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete']);

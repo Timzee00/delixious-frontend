@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import ReorderButton from '../components/orders/ReorderButton.jsx';
 import api from '../lib/api.js';
 import { formatNaira } from '../lib/format.js';
 import { EmptyState, ErrorState } from '../components/StateViews.jsx';
@@ -68,13 +69,9 @@ export default function OrderHistory() {
           <>
             <div className="space-y-3">
               {orders.map((order) => (
-                <Link
-                  key={order.id}
-                  to={`/orders/${order.id}`}
-                  className="ticket block p-4 transition-shadow hover:shadow-md"
-                >
+                <article key={order.id} className="ticket p-4 transition-shadow hover:shadow-md">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-display text-sm font-bold text-ink">{order.restaurants?.name}</h4>
+                    <Link to={`/orders/${order.id}`} className="font-display text-sm font-bold text-ink hover:text-pepper">{order.restaurants?.name}</Link>
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide ${
                         STATUS_STYLES[order.status] || 'bg-ink-soft text-white'
@@ -87,7 +84,11 @@ export default function OrderHistory() {
                     <span>{new Date(order.created_at).toLocaleDateString()}</span>
                     <span className="font-mono font-semibold text-ink">{formatNaira(order.total_amount)}</span>
                   </div>
-                </Link>
+                  <div className="mt-3 flex items-center justify-between border-t border-hairline pt-3">
+                    <Link to={`/orders/${order.id}`} className="text-sm font-semibold text-pepper hover:underline">View order details</Link>
+                    {order.payment_status==='paid' && order.status==='delivered' && <ReorderButton orderId={order.id} compact />}
+                  </div>
+                </article>
               ))}
             </div>
             {hasMore && (

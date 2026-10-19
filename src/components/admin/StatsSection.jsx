@@ -32,8 +32,8 @@ export default function StatsSection() {
       <StatCard label="Pending Riders" value={stats.pending_riders} />
       <StatCard label="Customers" value={stats.total_customers} />
       <StatCard label="Total Orders" value={stats.total_orders} />
-      <StatCard label="Revenue" value={`₦${Number(stats.total_revenue).toLocaleString()}`} />
-      <StatCard label="Platform Commission" value={`₦${Number(stats.total_commission).toLocaleString()}`} />
+      <StatCard label="Revenue" value={stats.total_revenue == null ? 'Not available' : `₦${Number(stats.total_revenue).toLocaleString()}`} />
+      <StatCard label="Platform Commission" value={stats.total_commission == null ? 'Not available' : `₦${Number(stats.total_commission).toLocaleString()}`} />
     </div>
   );
 }

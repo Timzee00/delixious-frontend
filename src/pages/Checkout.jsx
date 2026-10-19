@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -11,6 +11,73 @@ export default function Checkout() {
   const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [savedAddresses,setSavedAddresses] = useState([]);
+  const [addressLabel,setAddressLabel] = useState('Home');
+  const [savingAddress,setSavingAddress] = useState(false);
+  const [addressNotice,setAddressNotice] = useState('');
+  const [selectedAddressId,setSelectedAddressId] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    api.get('/addresses').then(({data})=>{
+      if(!active)return;
+      const rows=data.addresses||[];
+      setSavedAddresses(rows);
+      const preferred=rows.find((row)=>row.is_default);
+      if(preferred){
+        setAddress((old)=>old||preferred.address);
+        setCoords((old)=>old|| (preferred.lat != null && preferred.lng != null ? {lat:preferred.lat,lng:preferred.lng} : null));
+        setSelectedAddressId(preferred.id);
+      }
+    }).catch(()=>{ /* manually entered addresses still work */ });
+    return ()=>{active=false;};
+  },[]);
+
+  function chooseAddress(id) {
+    setSelectedAddressId(id);
+    const selected=savedAddresses.find((row)=>row.id===id);
+    if(selected){
+      setAddress(selected.address);
+      setCoords(selected.lat != null && selected.lng != null ? {lat:selected.lat,lng:selected.lng} : null);
+      setError('');
+    }
+  }
+
+  async function saveCurrentAddress() {
+    if(address.trim().length<5){setError('Enter a full delivery address before saving it.');return;}
+    setSavingAddress(true);setAddressNotice('');setError('');
+    try{
+      const {data}=await api.post('/addresses',{
+        label:addressLabel.trim()||'Home',address:address.trim(),
+        lat:coords?.lat??null,lng:coords?.lng??null,
+      });
+      const updated=[data.address,...savedAddresses];
+      setSavedAddresses(updated);
+      setSelectedAddressId(data.address.id);
+      setAddressNotice('Address saved securely to your Delixious account.');
+    }catch(err){setError(err.response?.data?.error||'Could not save this address.');}
+    finally{setSavingAddress(false);}
+  }
+
+  async function makeDefaultAddress() {
+    if(!selectedAddressId)return;
+    try{
+      await api.patch(`/addresses/${selectedAddressId}/default`);
+      setSavedAddresses((rows)=>rows.map((row)=>({...row,is_default:row.id===selectedAddressId})));
+      setAddressNotice('Your default address has been updated.');
+    }catch(err){setError(err.response?.data?.error||'Could not update default address.');}
+  }
+
+  async function removeSavedAddress() {
+    if(!selectedAddressId||!window.confirm('Remove this saved delivery address?'))return;
+    const id=selectedAddressId;
+    try{
+      await api.delete(`/addresses/${id}`);
+      setSavedAddresses((rows)=>rows.filter((row)=>row.id!==id));
+      setSelectedAddressId('');
+      setAddressNotice('Saved address removed. You can still type a delivery address.');
+    }catch(err){setError(err.response?.data?.error||'Could not remove address.');}
+  }
 
   if (!cart || !cart.items.length) {
     return (
@@ -45,6 +112,7 @@ export default function Checkout() {
       return;
     }
     setLocating(true);
+    setSelectedAddressId('');
     setError('');
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -120,9 +188,26 @@ export default function Checkout() {
 
       <form onSubmit={handleSubmit} className="ticket mt-6 space-y-4 p-6">
         <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-soft">Delivery address</h2>
+        {savedAddresses.length>0 && (
+          <div className="rounded-xl border border-hairline bg-sand p-4">
+            <label className="block text-sm font-semibold text-ink">Use a saved address
+              <select value={selectedAddressId} onChange={(event)=>chooseAddress(event.target.value)}
+                className="mt-2 block w-full rounded-lg border border-hairline bg-paper px-3 py-3 text-ink">
+                <option value="">Enter another address</option>
+                {savedAddresses.map((item)=><option key={item.id} value={item.id}>
+                  {item.label}{item.is_default?' (default)':''} — {item.address.slice(0,65)}
+                </option>)}
+              </select>
+            </label>
+            {selectedAddressId && <div className="mt-3 flex flex-wrap gap-3 text-xs">
+              <button type="button" onClick={makeDefaultAddress} className="font-semibold text-pepper">Make default</button>
+              <button type="button" onClick={removeSavedAddress} className="font-semibold text-danger">Remove saved address</button>
+            </div>}
+          </div>
+        )}
         <textarea
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={(e) => { setAddress(e.target.value); setCoords(null); setSelectedAddressId(''); }}
           rows={3}
           placeholder="e.g. 12 Admiralty Way, Lekki Phase 1, Lagos"
           className="w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-ink placeholder:text-ink-soft/60 focus:border-pepper"
@@ -136,6 +221,24 @@ export default function Checkout() {
           {locating ? 'Locating...' : coords ? 'Location attached ✓' : 'Use my current location'}
         </button>
 
+        <div className="rounded-xl border border-hairline p-4">
+          <p className="text-sm font-semibold text-ink">Save for a faster checkout next time</p>
+          <p className="mt-1 text-xs text-ink-soft">Optional. Your delivery address stays private to your account. Only save it when you choose to.</p>
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <label className="flex-1 text-xs font-medium text-ink">Address label
+              <input type="text" maxLength={50} value={addressLabel}
+                onChange={(e)=>setAddressLabel(e.target.value)}
+                placeholder="Home or Work"
+                className="mt-1 block w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-sm text-ink" />
+            </label>
+            <button type="button" disabled={savingAddress||savedAddresses.length>=10}
+              onClick={saveCurrentAddress}
+              className="rounded-lg border border-pepper px-3 py-2 text-sm font-semibold text-pepper disabled:opacity-40">
+              {savingAddress?'Saving...':'Save this address'}
+            </button>
+          </div>
+        </div>
+        {addressNotice && <p role="status" className="rounded-lg bg-jade-soft p-3 text-sm text-jade">{addressNotice}</p>}
         {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 
         <button
@@ -148,4 +251,3 @@ export default function Checkout() {
       </form>
     </div>
   );
-          }
