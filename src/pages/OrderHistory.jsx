@@ -86,7 +86,7 @@ export default function OrderHistory() {
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-hairline pt-3">
                     <Link to={`/orders/${order.id}`} className="text-sm font-semibold text-pepper hover:underline">View order details</Link>
-                    {order.payment_status==='paid' && <ReorderButton orderId={order.id} compact />}
+                    {order.payment_status==='paid' && order.status==='delivered' && <ReorderButton orderId={order.id} compact />}
                   </div>
                 </article>
               ))}
