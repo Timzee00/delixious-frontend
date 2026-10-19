@@ -148,4 +148,3 @@ export default function Checkout() {
       </form>
     </div>
   );
-          }
