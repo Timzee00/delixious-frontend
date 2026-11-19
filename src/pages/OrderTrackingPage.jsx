@@ -29,11 +29,10 @@ export default function OrderTrackingPage() {
       setOrder(data.order);
       setTracking(data.order.delivery_tracking?.[0] || null);
 
-      if (data.order.status === 'delivered') {
-        const { data: reviewsData } = await api.get('/reviews/mine');
-        const match = reviewsData.reviews.find((r) => r.order_id === id);
-        if (match) setExistingReview(match);
-      }
+      const embeddedReview = Array.isArray(data.order.reviews)
+        ? (data.order.reviews[0] || null)
+        : (data.order.reviews || null);
+      setExistingReview(embeddedReview);
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load this order.');
     } finally {
@@ -203,9 +202,18 @@ export default function OrderTrackingPage() {
 
       {order.status === 'delivered' && (
         <div className="ticket mt-6 p-6">
-          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink-soft">
-            {existingReview ? 'Your review' : 'Rate this order'}
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink-soft">
+              {existingReview ? 'Your review' : 'Rate this restaurant'}
+            </h3>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF5EF] px-2.5 py-1 text-[10px] font-semibold text-[#26764A]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+              Verified purchase
+            </span>
+          </div>
           {existingReview ? (
             <div className="mt-3">
               <StarDisplay rating={existingReview.rating} />
@@ -218,7 +226,7 @@ export default function OrderTrackingPage() {
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
                 rows={3}
-                placeholder="How was your order? (optional)"
+                placeholder="How was this restaurant? Share your experience (optional)"
                 className="w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-pepper"
               />
               {reviewError && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{reviewError}</p>}
