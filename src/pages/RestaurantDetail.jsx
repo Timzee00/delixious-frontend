@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import MenuItemRow from '../components/MenuItemRow.jsx';
 import FavoriteButton from '../components/FavoriteButton.jsx';
+import RestaurantReviewsModal from '../components/RestaurantReviewsModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 
 export default function RestaurantDetail() {
@@ -15,6 +16,7 @@ export default function RestaurantDetail() {
   const [restaurant, setRestaurant] = useState(null);
   const [grouped, setGrouped] = useState({});
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -84,13 +86,35 @@ export default function RestaurantDetail() {
           <div className="min-w-0"><h1 className="font-display text-2xl font-bold text-ink">{restaurant.name}</h1>{restaurant.cuisine_type && <p className="mt-1 text-sm text-ink-soft">{restaurant.cuisine_type}</p>}{restaurant.address && <p className="mt-1 text-xs text-ink-soft">{restaurant.address}</p>}</div>
           <div className="flex shrink-0 items-center gap-2"><FavoriteButton active={isFavorite} onClick={toggleFavorite} disabled={!isAuthenticated || favoriteBusy} /><span className={`rounded-full px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wide ${restaurant.is_open ? 'bg-jade text-white' : 'bg-ink-soft text-white'}`}>{restaurant.is_open ? 'Open' : 'Closed'}</span></div>
         </div>
-        {restaurant.rating_count > 0 && <p className="mt-3 font-mono text-sm text-gold">★ {restaurant.rating_avg} ({restaurant.rating_count} reviews)</p>}
+        <button
+          type="button"
+          onClick={() => setReviewsOpen(true)}
+          aria-haspopup="dialog"
+          aria-label={restaurant.rating_count > 0
+            ? `Read ${restaurant.rating_count} reviews for ${restaurant.name}`
+            : `Be the first to review ${restaurant.name}`}
+          className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-ink transition-colors hover:bg-sand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pepper"
+        >
+          <span className="text-gold" aria-hidden="true">★</span>
+          {restaurant.rating_count > 0 ? (
+            <>
+              {Number(restaurant.rating_avg || 0).toFixed(1)}
+              <span className="font-normal text-ink-soft">({Number(restaurant.rating_count).toLocaleString()} reviews)</span>
+            </>
+          ) : (
+            <span className="font-normal text-ink-soft">Be the first to review</span>
+          )}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
         {restaurant.description && <p className="mt-3 text-sm text-ink-soft">{restaurant.description}</p>}
         {!isAuthenticated && <p className="mt-3 text-xs text-ink-soft">Log in to save this restaurant to your favorites.</p>}
       </div>
       {actionError && <p className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{actionError}</p>}
       {!restaurant.is_open && <p className="mt-4 rounded-lg bg-ink-soft/10 px-3 py-2 text-sm text-ink-soft">This restaurant is currently closed and not accepting orders.</p>}
       <div className="mt-8 space-y-8">{categories.length === 0 && <p className="text-center text-ink-soft">This restaurant hasn't added any available menu items yet.</p>}{categories.map(([category, items]) => <div key={category}><h2 className="font-display text-lg font-bold text-ink">{category}</h2><div className="mt-3 space-y-3">{items.map((item) => <MenuItemRow key={item.id} item={item} status={itemStatus[item.id]} onAdd={() => handleAdd(item)} />)}</div></div>)}</div>
+      {reviewsOpen && <RestaurantReviewsModal restaurant={restaurant} onClose={() => setReviewsOpen(false)} />}
       {conflict && <ConfirmModal title="Switch restaurants?" message={conflict.message} confirmLabel="Replace cart" onCancel={() => setConflict(null)} onConfirm={() => handleAdd(conflict.item, true)} />}
     </div>
   );
